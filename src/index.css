@@ -1,0 +1,266 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", ui-serif, Georgia, serif;
+
+  /* Azul RedMinuto — extraído directamente del logo */
+  --color-royal-50: #eff6ff;
+  --color-royal-100: #dcebff;
+  --color-royal-200: #b7d9ff;
+  --color-royal-300: #86beff;
+  --color-royal-400: #4b9bfa;
+  --color-royal-500: #1c7ef0;
+  --color-royal-600: #0175dd;
+  --color-royal-700: #0a5ebe;
+  --color-royal-800: #023d8c;
+  --color-royal-900: #012965;
+  --color-royal-950: #061a3d;
+
+  /* Dorado RedMinuto — extraído directamente del logo */
+  --color-gold-50: #fffbea;
+  --color-gold-100: #fff3c4;
+  --color-gold-200: #ffe58f;
+  --color-gold-300: #ffd65c;
+  --color-gold-400: #fdce32;
+  --color-gold-500: #f0b90d;
+  --color-gold-600: #cc9407;
+  --color-gold-700: #9c6f08;
+  --color-gold-800: #6e4e08;
+
+  /* Fondo — blanco frío, a tono con el azul de marca */
+  --color-cream-50: #fbfdff;
+  --color-cream-100: #f0f5fb;
+  --color-cream-200: #e1eaf5;
+  --color-cream-300: #cbdaee;
+
+  /* Terracota apagado — estados de error, nunca como color principal */
+  --color-clay-100: #fbe1de;
+  --color-clay-500: #d33f2e;
+  --color-clay-600: #b23324;
+
+  /* Grises neutros, con un leve tinte azul, para texto y bordes */
+  --color-ink-50: #f6f8fb;
+  --color-ink-100: #eaeff5;
+  --color-ink-200: #d6dee8;
+  --color-ink-300: #b3bfd1;
+  --color-ink-400: #8996aa;
+  --color-ink-500: #647087;
+  --color-ink-600: #4b5670;
+  --color-ink-700: #384258;
+  --color-ink-800: #232c3d;
+  --color-ink-900: #131b28;
+
+  --animate-fade-up: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade-in: fade-in 0.4s ease both;
+  --animate-toast-in: toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-toast-out: toast-out 0.25s cubic-bezier(0.4, 0, 1, 1) both;
+  --animate-blob: blob 14s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.8s ease-in-out infinite;
+  --animate-pop: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateX(24px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+  @keyframes toast-out {
+    from {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(24px) scale(0.95);
+    }
+  }
+  @keyframes blob {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      transform: translate(4%, 6%) scale(1.08);
+    }
+    66% {
+      transform: translate(-3%, -4%) scale(0.95);
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    70% {
+      transform: scale(1.05);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+}
+
+/*
+ * Tailwind v4 tree-shakes any @keyframes declared inside @theme unless a matching
+ * --animate-* token is used as a utility class. These are referenced via raw inline
+ * `style={{ animation: "..." }}` or hand-written CSS instead, so they must live here,
+ * outside @theme, to survive the production build untouched.
+ */
+@keyframes fill-bar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes ken-burns {
+  0% {
+    transform: scale(1.06) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.16) translate(-1%, -1.5%);
+  }
+}
+@keyframes gradient-pan {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+@keyframes shine-sweep {
+  0% {
+    transform: translateX(-120%) skewX(-15deg);
+  }
+  100% {
+    transform: translateX(220%) skewX(-15deg);
+  }
+}
+@keyframes blob-morph {
+  0%,
+  100% {
+    border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
+  }
+  50% {
+    border-radius: 42% 58% 63% 37% / 48% 42% 58% 52%;
+  }
+}
+
+body {
+  background-color: var(--color-cream-50);
+  color: var(--color-ink-700);
+}
+
+.font-serif-accent {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+}
+
+::selection {
+  background-color: var(--color-gold-300);
+  color: var(--color-royal-900);
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.shimmer-overlay {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 45%), transparent);
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(100deg, var(--color-gold-300), var(--color-gold-500), var(--color-gold-300));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-pan 6s ease-in-out infinite;
+}
+
+.dot-grid {
+  background-image: radial-gradient(circle, rgb(255 255 255 / 18%) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+
+.dot-grid-dark {
+  background-image: radial-gradient(circle, rgb(1 41 101 / 12%) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+
+.shine-hover {
+  position: relative;
+  overflow: hidden;
+}
+.shine-hover::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: 0;
+  width: 30%;
+  height: 200%;
+  background: linear-gradient(120deg, transparent, rgb(255 255 255 / 55%), transparent);
+  transform: translateX(-120%) skewX(-15deg);
+  transition: none;
+}
+.shine-hover:hover::after {
+  animation: shine-sweep 0.85s ease-in-out;
+}
