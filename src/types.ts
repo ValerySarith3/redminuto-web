@@ -1,4 +1,5 @@
-export type Rol = "DONANTE" | "VOLUNTARIO" | "BENEFICIARIO" | "ADMIN";
+// Una cuenta USUARIO puede donar, ser voluntaria y pedir ayuda; ADMIN es el personal de la sede.
+export type Rol = "USUARIO" | "ADMIN";
 
 export interface Usuario {
   id: number;
@@ -39,10 +40,27 @@ export interface Donacion {
   campana?: Campana;
   donanteId?: number;
   donante?: Usuario;
+  pago?: Pago | null;
   creadoEn: string;
 }
 
 export type EstadoInscripcion = "PENDIENTE" | "ACEPTADA" | "RECHAZADA";
+
+export interface Actividad {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  lugar: string;
+  cupo: number;
+  programaId: number;
+  programa?: Pick<Programa, "id" | "nombre">;
+  inscritos?: number;
+  disponibles?: number;
+  creadoEn: string;
+}
 
 export interface InscripcionVoluntario {
   id: number;
@@ -51,7 +69,25 @@ export interface InscripcionVoluntario {
   voluntario?: Usuario;
   programaId: number;
   programa?: Programa;
+  actividadId?: number | null;
+  actividad?: Actividad | null;
   creadoEn: string;
+}
+
+export interface Pago {
+  id: number;
+  referencia: string;
+  metodo: CanalDonacion;
+  estado: "PENDIENTE" | "APROBADO" | "RECHAZADO";
+  creadoEn: string;
+}
+
+export interface CambioEstado {
+  estadoAnterior: string | null;
+  estadoNuevo: string;
+  nota: string | null;
+  creadoEn: string;
+  porAdmin: boolean;
 }
 
 export type EstadoSolicitud = "PENDIENTE" | "EN_REVISION" | "APROBADA" | "RECHAZADA";
@@ -112,4 +148,38 @@ export interface AvanceProgramaVoluntarios {
   inscritos: number;
   faltan: number;
   porcentaje: number;
+}
+
+// Nombres legibles de los estados (el Badge los usa automáticamente).
+export const ETIQUETAS_ESTADO: Record<string, string> = {
+  PENDIENTE: "Pendiente",
+  COMPLETADA: "Completada",
+  FALLIDA: "Fallida",
+  ACEPTADA: "Aceptada",
+  RECHAZADA: "Rechazada",
+  EN_REVISION: "En revisión",
+  APROBADA: "Aprobada",
+};
+
+export const ETIQUETAS_CANAL: Record<CanalDonacion, string> = {
+  PASARELA: "Pasarela (tarjeta / PSE)",
+  TRANSFERENCIA: "Transferencia",
+  LLAVE: "Llave (Bre-B)",
+  EFECTIVO: "Efectivo",
+};
+
+export const ETIQUETAS_ROL: Record<Rol, string> = {
+  USUARIO: "Usuario",
+  ADMIN: "Administrador",
+};
+
+// "2026-10-10T00:00:00.000Z" → "sáb, 10 oct 2026" (la fecha de una actividad no tiene hora: se lee en UTC).
+export function formatoFechaActividad(fecha: string) {
+  return new Date(fecha).toLocaleDateString("es-CO", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }

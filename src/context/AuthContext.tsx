@@ -7,11 +7,18 @@ interface LoginRespuesta {
   usuario: Usuario;
 }
 
+interface DatosRegistro {
+  nombre: string;
+  email: string;
+  password: string;
+  aceptaTratamientoDatos: boolean;
+}
+
 interface AuthContextValue {
   usuario: Usuario | null;
   cargando: boolean;
   login: (email: string, password: string) => Promise<Usuario>;
-  registrarse: (datos: { nombre: string; email: string; password: string; rol: Usuario["rol"] }) => Promise<Usuario>;
+  registrarse: (datos: DatosRegistro) => Promise<Usuario>;
   logout: () => void;
 }
 
@@ -50,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return respuesta.usuario;
   }
 
-  async function registrarse(datos: { nombre: string; email: string; password: string; rol: Usuario["rol"] }) {
+  async function registrarse(datos: DatosRegistro) {
     const respuesta = await api.post<LoginRespuesta>("/usuarios/registro", datos);
     guardarSesion(respuesta);
     return respuesta.usuario;

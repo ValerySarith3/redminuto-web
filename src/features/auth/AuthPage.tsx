@@ -1,12 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LayoutDashboard, ShieldCheck, Sparkles } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { LogoMark } from "../../components/LogoMark";
-import type { Rol } from "../../types";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { Input, Select } from "../../components/ui/Field";
+import { Checkbox, Input } from "../../components/ui/Field";
 import { useToast } from "../../components/ui/Toast";
 
 const beneficios = [
@@ -24,7 +23,7 @@ export function AuthPage() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rol, setRol] = useState<Rol>("DONANTE");
+  const [aceptaDatos, setAceptaDatos] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
 
@@ -38,8 +37,9 @@ export function AuthPage() {
         usuarioSesion = await login(email, password);
         toast.exito("¡Bienvenido de vuelta!");
       } else {
-        usuarioSesion = await registrarse({ nombre, email, password, rol });
-        toast.exito("¡Cuenta creada!", `Ya puedes participar como ${rol.toLowerCase()}`);
+        if (!aceptaDatos) throw new Error("Debes aceptar la política de tratamiento de datos para registrarte");
+        usuarioSesion = await registrarse({ nombre, email, password, aceptaTratamientoDatos: aceptaDatos });
+        toast.exito("¡Cuenta creada!", "Ya puedes donar, inscribirte como voluntario o solicitar ayuda.");
       }
       navigate(usuarioSesion.rol === "ADMIN" ? "/admin" : "/");
     } catch (e) {
@@ -64,7 +64,7 @@ export function AuthPage() {
         <div className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 animate-blob rounded-full bg-royal-500/30 blur-3xl" />
         <div className="pointer-events-none absolute -left-10 bottom-10 h-56 w-56 animate-blob rounded-full bg-gold-400/20 blur-3xl [animation-delay:3s]" />
 
-        <div className="relative flex items-center gap-2 font-serif text-xl italic font-semibold">
+        <div className="relative flex items-center gap-2 font-serif text-xl font-bold">
           <LogoMark className="h-9 w-9" />
           RedMinuto
         </div>
@@ -132,11 +132,24 @@ export function AuthPage() {
                 minLength={6}
               />
               {modo === "registro" && (
-                <Select label="Quiero participar como" value={rol} onChange={(e) => setRol(e.target.value as Rol)}>
-                  <option value="DONANTE">Donante</option>
-                  <option value="VOLUNTARIO">Voluntario</option>
-                  <option value="BENEFICIARIO">Beneficiario</option>
-                </Select>
+                <p className="rounded-xl bg-royal-50 px-3.5 py-2.5 text-xs text-royal-800">
+                  Con una sola cuenta puedes donar, inscribirte como voluntario y solicitar ayuda.
+                </p>
+              )}
+              {modo === "registro" && (
+                <Checkbox
+                  checked={aceptaDatos}
+                  onChange={(e) => setAceptaDatos(e.target.checked)}
+                  label={
+                    <>
+                      Autorizo el tratamiento de mis datos personales según la{" "}
+                      <Link to="/privacidad" target="_blank" className="font-semibold text-royal-700 underline">
+                        política de privacidad
+                      </Link>{" "}
+                      (Ley 1581 de 2012).
+                    </>
+                  }
+                />
               )}
 
               {error && <p className="text-sm text-clay-600">{error}</p>}

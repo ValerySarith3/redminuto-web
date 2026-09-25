@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { api } from "../../lib/api";
+import { ETIQUETAS_ROL } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 import type { Rol } from "../../types";
 import { Card } from "../../components/ui/Card";
@@ -19,14 +20,7 @@ interface UsuarioAdmin {
   _count: { donaciones: number; inscripciones: number; solicitudes: number };
 }
 
-const ETIQUETAS_ROL: Record<Rol, string> = {
-  DONANTE: "Donante",
-  VOLUNTARIO: "Voluntario",
-  BENEFICIARIO: "Beneficiario",
-  ADMIN: "Administrador",
-};
-
-const roles: Rol[] = ["DONANTE", "VOLUNTARIO", "BENEFICIARIO", "ADMIN"];
+const roles: Rol[] = ["USUARIO", "ADMIN"];
 
 interface FormularioUsuario {
   nombre: string;
@@ -35,7 +29,7 @@ interface FormularioUsuario {
   rol: Rol;
 }
 
-const formularioVacio: FormularioUsuario = { nombre: "", email: "", password: "", rol: "DONANTE" };
+const formularioVacio: FormularioUsuario = { nombre: "", email: "", password: "", rol: "USUARIO" };
 
 function actividad(u: UsuarioAdmin) {
   const partes: string[] = [];

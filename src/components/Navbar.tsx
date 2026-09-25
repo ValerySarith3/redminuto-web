@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpRight, LayoutDashboard, Menu, ShieldCheck, X } from "lucide-react";
+import { ArrowUpRight, LayoutDashboard, LogOut, Menu, ShieldCheck, X } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { LogoMark } from "./LogoMark";
+import { useToast } from "./ui/Toast";
+import { LogoCompleto, LogoMark } from "./LogoMark";
 
 const links = [
   { to: "/", label: "Programas" },
@@ -16,6 +17,7 @@ export function Navbar() {
   const { usuario, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const toast = useToast();
   const [scrolled, setScrolled] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
 
@@ -49,10 +51,16 @@ export function Navbar() {
     setMenuAbierto(false);
   }
 
+  function cerrarSesion() {
+    logout();
+    ir("/");
+    toast.exito("Sesión cerrada", "¡Gracias por tu apoyo! Vuelve pronto.");
+  }
+
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+        className={`fixed inset-x-0 top-0 z-50 print:hidden transition-all duration-300 ${
           transparente
             ? "bg-transparent"
             : "border-b border-ink-200 bg-cream-50/85 shadow-sm shadow-royal-900/5 backdrop-blur-md"
@@ -70,28 +78,43 @@ export function Navbar() {
             <Menu className="h-4 w-4" /> Menú
           </button>
 
-          <NavLink to={inicio} className="flex items-center gap-2">
-            <LogoMark className={`h-8 w-8 ${transparente ? "text-white" : "text-royal-700"}`} />
-            <span
-              className={`font-serif text-lg italic font-semibold transition-colors ${
-                transparente ? "text-white" : "text-royal-900"
-              }`}
-            >
-              RedMinuto
-            </span>
+          <NavLink to={inicio} className="flex items-center gap-2" aria-label="RedMinuto, inicio">
+            {transparente ? (
+              <>
+                <LogoMark className="h-9 w-9" />
+                <span className="font-serif text-lg font-bold text-white">RedMinuto</span>
+              </>
+            ) : (
+              <LogoCompleto className="h-11 w-auto" />
+            )}
           </NavLink>
 
           {usuario ? (
-            <button
-              type="button"
-              onClick={() => navigate(esAdmin ? "/admin" : "/dashboard")}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors ${
-                transparente ? "bg-white/10 text-white backdrop-blur-md hover:bg-white/20" : "bg-royal-50 text-royal-700 hover:bg-royal-100"
-              }`}
-            >
-              {esAdmin ? <ShieldCheck className="h-3.5 w-3.5" /> : <LayoutDashboard className="h-3.5 w-3.5" />}
-              {usuario.nombre.split(" ")[0]}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate(esAdmin ? "/admin" : "/dashboard")}
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors ${
+                  transparente ? "bg-white/10 text-white backdrop-blur-md hover:bg-white/20" : "bg-royal-50 text-royal-700 hover:bg-royal-100"
+                }`}
+              >
+                {esAdmin ? <ShieldCheck className="h-3.5 w-3.5" /> : <LayoutDashboard className="h-3.5 w-3.5" />}
+                <span className="hidden sm:inline">{usuario.nombre.split(" ")[0]}</span>
+              </button>
+              <button
+                type="button"
+                onClick={cerrarSesion}
+                title="Cerrar sesión"
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-2.5 text-sm font-semibold transition-colors sm:px-4 ${
+                  transparente
+                    ? "border border-white/25 text-white hover:bg-white/10"
+                    : "border border-ink-200 text-ink-600 hover:border-clay-500 hover:bg-clay-100 hover:text-clay-600"
+                }`}
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Cerrar sesión</span>
+              </button>
+            </div>
           ) : (
             <button
               type="button"
@@ -117,8 +140,8 @@ export function Navbar() {
           >
             <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
               <div className="flex items-center gap-2">
-                <LogoMark className="h-8 w-8 text-white" />
-                <span className="font-serif text-lg italic font-semibold">RedMinuto</span>
+                <LogoMark className="h-9 w-9" />
+                <span className="font-serif text-lg font-bold">RedMinuto</span>
               </div>
               <button
                 type="button"
@@ -154,10 +177,7 @@ export function Navbar() {
               {usuario ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    logout();
-                    ir("/");
-                  }}
+                  onClick={cerrarSesion}
                   className="rounded-full border border-white/20 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/10"
                 >
                   Cerrar sesión

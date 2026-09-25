@@ -7,10 +7,11 @@ import { BeneficiariosPage } from "./features/beneficiarios/BeneficiariosPage";
 import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { AuthPage } from "./features/auth/AuthPage";
 import { AdminPage } from "./features/admin/AdminPage";
+import { PrivacidadPage } from "./features/privacidad/PrivacidadPage";
 
 function App() {
   return (
-    <div className="min-h-screen bg-ink-50">
+    <div className="min-h-screen bg-ink-50 print:bg-white">
       <Navbar />
       <Routes>
         <Route
@@ -45,6 +46,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/privacidad" element={<PrivacidadPage />} />
         <Route
           path="/auth"
           element={

@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock, MapPin } from "lucide-react";
 import { api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { iconoPrograma } from "../../lib/programIcons";
-import type { AvanceProgramaVoluntarios, InscripcionVoluntario, Programa } from "../../types";
+import {
+  formatoFechaActividad,
+  type Actividad,
+  type AvanceProgramaVoluntarios,
+  type InscripcionVoluntario,
+  type Programa,
+} from "../../types";
 import { Card } from "../../components/ui/Card";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 import { Button } from "../../components/ui/Button";
@@ -14,14 +20,15 @@ import { StaggerGroup, StaggerItem, staggerItem } from "../../components/Reveal"
 
 interface ProgramaConAvance extends Programa {
   avance: AvanceProgramaVoluntarios | null;
+  actividades: Actividad[];
 }
 
 export function VoluntariosPage() {
   const { usuario } = useAuth();
   const toast = useToast();
   const [programas, setProgramas] = useState<ProgramaConAvance[] | null>(null);
-  const [misProgramaIds, setMisProgramaIds] = useState<Set<number>>(new Set());
-  const [inscribiendo, setInscribiendo] = useState<number | null>(null);
+  const [mias, setMias] = useState<InscripcionVoluntario[]>([]);
+  const [inscribiendo, setInscribiendo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,35 +37,37 @@ export function VoluntariosPage() {
 
   async function cargar() {
     try {
-      const listaProgramas = await api.get<Programa[]>("/programas");
+      const [listaProgramas, actividades] = await Promise.all([
+        api.get<Programa[]>("/programas"),
+        api.get<Actividad[]>("/actividades"),
+      ]);
       const conAvance = await Promise.all(
         listaProgramas.map(async (p) => ({
           ...p,
           avance: await api.get<AvanceProgramaVoluntarios>(`/dashboard/programas/${p.id}`).catch(() => null),
+          actividades: actividades.filter((a) => a.programaId === p.id),
         })),
       );
       setProgramas(conAvance);
 
-      if (usuario) {
-        const mias = await api.get<InscripcionVoluntario[]>("/voluntariado/mias");
-        setMisProgramaIds(new Set(mias.map((i) => i.programaId)));
-      }
+      if (usuario) setMias(await api.get<InscripcionVoluntario[]>("/voluntariado/mias"));
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudieron cargar los programas");
     }
   }
 
-  async function inscribirse(programaId: number, nombrePrograma: string) {
+  async function inscribirse(destino: { actividadId: number } | { programaId: number }, nombre: string) {
     if (!usuario) {
       window.location.href = "/auth";
       return;
     }
-    setInscribiendo(programaId);
+    const clave = "actividadId" in destino ? `a${destino.actividadId}` : `p${destino.programaId}`;
+    setInscribiendo(clave);
     setError(null);
     try {
-      await api.post("/voluntariado", { programaId });
-      setMisProgramaIds((actual) => new Set(actual).add(programaId));
-      toast.exito("¡Inscripción confirmada!", `Ya haces parte de ${nombrePrograma}`);
+      await api.post("/voluntariado", destino);
+      toast.exito("¡Inscripción registrada!", `${nombre}: queda pendiente de aprobación. Síguela en tu panel.`);
+      await cargar();
     } catch (e) {
       const mensaje = e instanceof Error ? e.message : "No se pudo completar la inscripción";
       setError(mensaje);
@@ -68,13 +77,16 @@ export function VoluntariosPage() {
     }
   }
 
+  const inscritoEnActividad = (id: number) => mias.some((i) => i.actividadId === id);
+  const inscritoEnPrograma = (id: number) => mias.some((i) => i.programaId === id && !i.actividadId);
+
   return (
     <div>
       <PageHeader
         eyebrow="Voluntariado"
         titulo="Súmate al"
         acento="voluntariado"
-        descripcion="Inscríbete a un programa y sigue cuántos cupos faltan por llenar desde tu panel de seguimiento."
+        descripcion="Elige una jornada con fecha, horario y lugar. Verás los cupos disponibles y el estado de tu inscripción en tu panel."
       />
 
       <div className="mx-auto max-w-6xl px-6 py-12">
@@ -86,49 +98,104 @@ export function VoluntariosPage() {
             <SkeletonCard />
           </div>
         ) : (
-          <StaggerGroup className="grid gap-6 sm:grid-cols-2">
+          <StaggerGroup className="grid gap-6 lg:grid-cols-2">
             {programas.map((programa) => {
-              const yaInscrito = misProgramaIds.has(programa.id);
-              const cupoLleno = (programa.avance?.faltan ?? 1) <= 0;
               const Icono = iconoPrograma(programa.nombre);
               return (
                 <StaggerItem key={programa.id} variants={staggerItem}>
-                <Card
-                  hover
-                  className="flex h-full flex-col gap-5"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-royal-50">
-                      <Icono className="h-4 w-4 text-royal-700" strokeWidth={2} />
-                    </span>
-                    <div>
-                      <h2 className="font-serif text-lg font-medium text-ink-900">{programa.nombre}</h2>
-                      <p className="mt-1 text-sm text-ink-500">{programa.descripcion}</p>
+                  <Card className="flex h-full flex-col gap-5">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-royal-50">
+                        <Icono className="h-4 w-4 text-royal-700" strokeWidth={2} />
+                      </span>
+                      <div>
+                        <h2 className="font-serif text-lg font-medium text-ink-900">{programa.nombre}</h2>
+                        <p className="mt-1 text-sm text-ink-500">{programa.descripcion}</p>
+                      </div>
                     </div>
-                  </div>
-                  {programa.avance && (
-                    <ProgressBar
-                      porcentaje={programa.avance.porcentaje}
-                      etiqueta={`${programa.avance.inscritos}/${programa.avance.cupo} voluntarios · faltan ${programa.avance.faltan}`}
-                    />
-                  )}
-                  <Button
-                    variante={yaInscrito ? "outline" : "primary"}
-                    disabled={yaInscrito || cupoLleno}
-                    cargando={inscribiendo === programa.id}
-                    onClick={() => inscribirse(programa.id, programa.nombre)}
-                  >
-                    {yaInscrito ? (
-                      <>
-                        <CheckCircle2 className="h-4 w-4" /> Ya estás inscrito
-                      </>
-                    ) : cupoLleno ? (
-                      "Cupo lleno"
-                    ) : (
-                      "Inscribirme"
+                    {programa.avance && (
+                      <ProgressBar
+                        porcentaje={programa.avance.porcentaje}
+                        etiqueta={`Meta del programa: ${programa.avance.inscritos}/${programa.avance.cupo} voluntarios`}
+                      />
                     )}
-                  </Button>
-                </Card>
+
+                    {programa.actividades.length > 0 ? (
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">Próximas jornadas</p>
+                        {programa.actividades.map((actividad) => {
+                          const yaInscrito = inscritoEnActividad(actividad.id);
+                          const lleno = (actividad.disponibles ?? 0) <= 0;
+                          return (
+                            <div key={actividad.id} className="rounded-xl border border-ink-200 bg-cream-100/60 p-4">
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-ink-800">{actividad.titulo}</p>
+                                  <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-500">
+                                    <span className="inline-flex items-center gap-1">
+                                      <CalendarDays className="h-3.5 w-3.5" /> {formatoFechaActividad(actividad.fecha)}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1">
+                                      <Clock className="h-3.5 w-3.5" /> {actividad.horaInicio} – {actividad.horaFin}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1">
+                                      <MapPin className="h-3.5 w-3.5" /> {actividad.lugar}
+                                    </span>
+                                  </div>
+                                </div>
+                                <Button
+                                  variante={yaInscrito ? "outline" : "primary"}
+                                  className="px-3 py-1.5 text-xs"
+                                  disabled={yaInscrito || lleno}
+                                  cargando={inscribiendo === `a${actividad.id}`}
+                                  onClick={() => inscribirse({ actividadId: actividad.id }, actividad.titulo)}
+                                >
+                                  {yaInscrito ? (
+                                    <>
+                                      <CheckCircle2 className="h-3.5 w-3.5" /> Inscrito
+                                    </>
+                                  ) : lleno ? (
+                                    "Cupo lleno"
+                                  ) : (
+                                    "Inscribirme"
+                                  )}
+                                </Button>
+                              </div>
+                              <div className="mt-3">
+                                <ProgressBar
+                                  compact
+                                  porcentaje={actividad.cupo > 0 ? ((actividad.inscritos ?? 0) / actividad.cupo) * 100 : 0}
+                                  etiqueta={`${actividad.inscritos}/${actividad.cupo} cupos · quedan ${actividad.disponibles}`}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="mt-auto space-y-3">
+                        <p className="text-sm text-ink-400">
+                          Aún no hay jornadas programadas. Puedes inscribirte al programa y te contactaremos.
+                        </p>
+                        <Button
+                          variante={inscritoEnPrograma(programa.id) ? "outline" : "primary"}
+                          disabled={inscritoEnPrograma(programa.id) || (programa.avance?.faltan ?? 1) <= 0}
+                          cargando={inscribiendo === `p${programa.id}`}
+                          onClick={() => inscribirse({ programaId: programa.id }, programa.nombre)}
+                        >
+                          {inscritoEnPrograma(programa.id) ? (
+                            <>
+                              <CheckCircle2 className="h-4 w-4" /> Ya estás inscrito
+                            </>
+                          ) : (programa.avance?.faltan ?? 1) <= 0 ? (
+                            "Cupo lleno"
+                          ) : (
+                            "Inscribirme al programa"
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
                 </StaggerItem>
               );
             })}

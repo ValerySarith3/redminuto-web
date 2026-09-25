@@ -38,7 +38,8 @@ Este proyecto consume la API del proyecto hermano `redminuto-api`. Para las cred
 | `/beneficiarios`    | Todos (requiere cuenta para enviar)    | Formulario de solicitud de ayuda              |
 | `/dashboard`        | Usuarios autenticados                  | Seguimiento personal: donaciones, inscripciones y solicitudes |
 | `/auth`             | Visitantes                             | Ingreso y registro                            |
-| `/admin`            | Solo rol `ADMIN`                       | Gestión de usuarios, programas, campañas, voluntariado y solicitudes |
+| `/admin`            | Solo rol `ADMIN`                       | Tablero con indicadores y gráficos, reportes (imprimir/PDF y CSV para Excel), confirmación de donaciones, y gestión de usuarios, programas, campañas, actividades, voluntariado y solicitudes |
+| `/privacidad`       | Todos                                  | Política de tratamiento de datos (Ley 1581 de 2012) |
 
 ## Estructura
 

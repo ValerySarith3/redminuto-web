@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ETIQUETAS_ESTADO } from "../../types";
 
 type Tono = "neutral" | "success" | "warning" | "danger";
 
@@ -33,7 +34,7 @@ export function Badge({ children, tono }: { children: ReactNode; tono?: Tono }) 
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${tonos[resuelto]}`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${puntos[resuelto]}`} />
-      {children}
+      {typeof children === "string" ? (ETIQUETAS_ESTADO[children] ?? children) : children}
     </span>
   );
 }

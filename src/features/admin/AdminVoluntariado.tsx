@@ -1,16 +1,29 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../../lib/api";
-import type { EstadoInscripcion, InscripcionVoluntario } from "../../types";
+import { ETIQUETAS_ESTADO, formatoFechaActividad, type EstadoInscripcion, type InscripcionVoluntario } from "../../types";
+import { FiltroChips } from "./FiltroChips";
+
+type Filtro = "TODAS" | EstadoInscripcion;
+const filtros: Filtro[] = ["PENDIENTE", "ACEPTADA", "RECHAZADA", "TODAS"];
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Badge } from "../../components/ui/Badge";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { useToast } from "../../components/ui/Toast";
 
-export function AdminVoluntariado() {
+export function AdminVoluntariado({ filtroInicial }: { filtroInicial?: string }) {
   const toast = useToast();
   const [inscripciones, setInscripciones] = useState<InscripcionVoluntario[] | null>(null);
   const [actualizando, setActualizando] = useState<number | null>(null);
+  const [filtro, setFiltro] = useState<Filtro>(
+    filtros.includes(filtroInicial as Filtro) ? (filtroInicial as Filtro) : "TODAS",
+  );
+
+  const visibles = useMemo(
+    () => inscripciones?.filter((i) => filtro === "TODAS" || i.estado === filtro) ?? null,
+    [inscripciones, filtro],
+  );
+  const conteo = (f: Filtro) => inscripciones?.filter((i) => f === "TODAS" || i.estado === f).length ?? 0;
 
   useEffect(() => {
     cargar();
@@ -40,17 +53,22 @@ export function AdminVoluntariado() {
   return (
     <div className="space-y-6">
       <h2 className="font-serif text-xl font-medium text-ink-900">Inscripciones de voluntariado</h2>
+      <FiltroChips
+        valor={filtro}
+        onChange={setFiltro}
+        opciones={filtros.map((f) => ({ id: f, label: f === "TODAS" ? "Todas" : ETIQUETAS_ESTADO[f], cantidad: conteo(f) }))}
+      />
 
-      {!inscripciones ? (
+      {!visibles ? (
         <div className="space-y-3">
           <Skeleton className="h-20" />
           <Skeleton className="h-20" />
         </div>
-      ) : inscripciones.length === 0 ? (
-        <Card className="text-center text-ink-500">Aún no hay inscripciones registradas.</Card>
+      ) : visibles.length === 0 ? (
+        <Card className="text-center text-ink-500">No hay inscripciones en este filtro.</Card>
       ) : (
         <div className="space-y-3">
-          {inscripciones.map((inscripcion) => (
+          {visibles.map((inscripcion) => (
             <Card key={inscripcion.id} className="flex flex-wrap items-center justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -59,6 +77,11 @@ export function AdminVoluntariado() {
                 </div>
                 <p className="mt-1 text-sm text-ink-500">
                   {inscripcion.voluntario?.email} · {inscripcion.programa?.nombre}
+                </p>
+                <p className="mt-1 text-xs uppercase tracking-wide text-ink-400">
+                  {inscripcion.actividad
+                    ? `${inscripcion.actividad.titulo} · ${formatoFechaActividad(inscripcion.actividad.fecha)} · ${inscripcion.actividad.horaInicio}–${inscripcion.actividad.horaFin}`
+                    : "Inscripción general al programa"}
                 </p>
               </div>
               {inscripcion.estado === "PENDIENTE" && (

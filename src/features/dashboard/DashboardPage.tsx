@@ -6,17 +6,19 @@ import { Badge } from "../../components/ui/Badge";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { PageHeader } from "../../components/PageHeader";
 import { useCountUp } from "../../lib/useCountUp";
-import { ETIQUETAS_TIPO_APOYO, type TipoApoyo } from "../../types";
+import { ETIQUETAS_CANAL, ETIQUETAS_TIPO_APOYO, formatoFechaActividad, type CambioEstado, type CanalDonacion, type TipoApoyo } from "../../types";
+import { LineaDeTiempo } from "../../components/LineaDeTiempo";
 import { Reveal, StaggerGroup, StaggerItem, staggerItem } from "../../components/Reveal";
 
 interface ResumenDonacion {
   id: number;
   numeroComprobante?: string;
   monto: number;
-  canal: string;
+  canal: CanalDonacion;
   estado: string;
   creadoEn: string;
   campana: { id: number; titulo: string; avance: { porcentaje: number; recaudado: number; meta: number } | null };
+  historial: CambioEstado[];
 }
 
 interface ResumenInscripcion {
@@ -24,6 +26,8 @@ interface ResumenInscripcion {
   estado: string;
   creadoEn: string;
   programa: { id: number; nombre: string; avance: { porcentaje: number; inscritos: number; cupo: number } | null };
+  actividad: { titulo: string; fecha: string; horaInicio: string; horaFin: string; lugar: string } | null;
+  historial: CambioEstado[];
 }
 
 interface ResumenSolicitud {
@@ -33,6 +37,7 @@ interface ResumenSolicitud {
   estado: string;
   creadoEn: string;
   programa: { id: number; nombre: string };
+  historial: CambioEstado[];
 }
 
 interface Resumen {
@@ -105,7 +110,7 @@ export function DashboardPage() {
                     <Badge>{d.estado}</Badge>
                   </div>
                   <p className="mt-1 text-sm text-ink-500">
-                    Aportaste ${d.monto.toLocaleString("es-CO")} · {d.canal}
+                    Aportaste ${d.monto.toLocaleString("es-CO")} · {ETIQUETAS_CANAL[d.canal] ?? d.canal}
                   </p>
                   {d.numeroComprobante && (
                     <p className="mt-1 text-xs uppercase tracking-wide text-ink-400">
@@ -120,6 +125,7 @@ export function DashboardPage() {
                       />
                     </div>
                   )}
+                  <LineaDeTiempo historial={d.historial} />
                 </Card>
                 </StaggerItem>
               ))}
@@ -138,6 +144,12 @@ export function DashboardPage() {
                     <span className="font-semibold text-ink-800">{i.programa.nombre}</span>
                     <Badge>{i.estado}</Badge>
                   </div>
+                  {i.actividad && (
+                    <p className="mt-1 text-sm text-ink-500">
+                      {i.actividad.titulo} · {formatoFechaActividad(i.actividad.fecha)} · {i.actividad.horaInicio}–
+                      {i.actividad.horaFin} · {i.actividad.lugar}
+                    </p>
+                  )}
                   {i.programa.avance && (
                     <div className="mt-3">
                       <ProgressBar
@@ -146,6 +158,7 @@ export function DashboardPage() {
                       />
                     </div>
                   )}
+                  <LineaDeTiempo historial={i.historial} />
                 </Card>
                 </StaggerItem>
               ))}
@@ -168,6 +181,7 @@ export function DashboardPage() {
                     {ETIQUETAS_TIPO_APOYO[s.tipoApoyo]}
                   </p>
                   <p className="mt-2 text-sm text-ink-500">{s.descripcion}</p>
+                  <LineaDeTiempo historial={s.historial} />
                 </Card>
                 </StaggerItem>
               ))}

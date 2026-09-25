@@ -24,6 +24,8 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
   const [paso, setPaso] = useState<Paso>("formulario");
   const [error, setError] = useState<string | null>(null);
   const [comprobante, setComprobante] = useState<string | null>(null);
+  // Una referencia por intento de pago: si el envío se repite (doble clic, reintento) la API no duplica la donación.
+  const [referencia] = useState(() => crypto.randomUUID());
   const toast = useToast();
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
     try {
       // Simula el tiempo de respuesta de una pasarela real (Wompi/PayU) en modo sandbox.
       await new Promise((resolve) => setTimeout(resolve, 1200));
-      const donacion = await api.post<Donacion>("/donaciones", { monto, canal, campanaId: campana.id });
+      const donacion = await api.post<Donacion>("/donaciones", { monto, canal, campanaId: campana.id, referencia });
       setPaso("exito");
       setComprobante(donacion.numeroComprobante ?? null);
       onDonacionCreada(donacion);
@@ -81,8 +83,10 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
             </div>
             <h3 className="font-serif text-lg font-medium text-ink-900">¡Gracias por tu donación!</h3>
             <p className="mt-1 text-sm text-ink-500">
-              Tu aporte a <strong>{campana.titulo}</strong> quedó registrado. Puedes ver su avance en tu panel de
-              seguimiento.
+              Tu aporte a <strong>{campana.titulo}</strong> quedó registrado.{" "}
+              {canal === "PASARELA"
+                ? "Puedes ver su avance en tu panel de seguimiento."
+                : "Quedará pendiente hasta que Casa Minuto de Dios confirme el pago; verás el cambio en tu panel de seguimiento."}
             </p>
             {comprobante && (
               <p className="mt-3 inline-block rounded-full bg-ink-100 px-3 py-1 text-xs font-semibold tracking-wide text-ink-600">
