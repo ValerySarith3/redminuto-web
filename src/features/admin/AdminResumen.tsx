@@ -50,7 +50,6 @@ import {
   type Resumen,
 } from "./reportes";
 
-// Colores de marca en hex (Recharts pinta SVG y no lee clases de Tailwind).
 const AZUL = "#0175dd";
 const AZUL_SUAVE = "#86beff";
 const HEX_TONO: Record<Tono, string> = { exito: AZUL, proceso: AZUL_SUAVE, espera: "#f0b90d", rechazo: "#d33f2e" };
@@ -96,7 +95,6 @@ export function AdminResumen({ irA }: { irA: IrA }) {
 
   return (
     <div className="space-y-6">
-      {/* Bienvenida */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-royal-700 via-royal-800 to-royal-950 px-6 py-7 text-white sm:px-8">
         <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-gold-400/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-royal-400/30 blur-3xl" />
@@ -269,7 +267,6 @@ export function AdminResumen({ irA }: { irA: IrA }) {
   );
 }
 
-// ---------- Piezas ----------
 
 function Tarjeta({
   titulo,
@@ -558,7 +555,6 @@ function BarrasCanal({ datos }: { datos: { etiqueta: string; valor: number }[] }
   );
 }
 
-// Anillo de progreso animado para el avance de una campaña.
 function Anillo({ porcentaje }: { porcentaje: number }) {
   const [visible, setVisible] = useState(0);
   useEffect(() => {

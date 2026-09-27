@@ -4,7 +4,6 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Merriweather", ui-serif, Georgia, serif;
 
-  /* Azul RedMinuto — extraído directamente del logo */
   --color-royal-50: #eff6ff;
   --color-royal-100: #dcebff;
   --color-royal-200: #b7d9ff;
@@ -17,7 +16,6 @@
   --color-royal-900: #012965;
   --color-royal-950: #061a3d;
 
-  /* Dorado RedMinuto — extraído directamente del logo */
   --color-gold-50: #fffbea;
   --color-gold-100: #fff3c4;
   --color-gold-200: #ffe58f;
@@ -28,18 +26,15 @@
   --color-gold-700: #9c6f08;
   --color-gold-800: #6e4e08;
 
-  /* Fondo — blanco frío, a tono con el azul de marca */
   --color-cream-50: #fbfdff;
   --color-cream-100: #f0f5fb;
   --color-cream-200: #e1eaf5;
   --color-cream-300: #cbdaee;
 
-  /* Terracota apagado — estados de error, nunca como color principal */
   --color-clay-100: #fbe1de;
   --color-clay-500: #d33f2e;
   --color-clay-600: #b23324;
 
-  /* Grises neutros, con un leve tinte azul, para texto y bordes */
   --color-ink-50: #f6f8fb;
   --color-ink-100: #eaeff5;
   --color-ink-200: #d6dee8;
@@ -142,12 +137,6 @@
   }
 }
 
-/*
- * Tailwind v4 tree-shakes any @keyframes declared inside @theme unless a matching
- * --animate-* token is used as a utility class. These are referenced via raw inline
- * `style={{ animation: "..." }}` or hand-written CSS instead, so they must live here,
- * outside @theme, to survive the production build untouched.
- */
 @keyframes fill-bar {
   from {
     transform: scaleX(0);

@@ -18,7 +18,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
-// Descarga un archivo protegido (p. ej. un CSV de reportes) enviando el token de sesión.
 async function descargar(path: string, nombreArchivo: string) {
   const res = await fetch(`${API_URL}${path}`, { headers: authHeaders() });
   if (!res.ok) {

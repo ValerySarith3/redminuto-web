@@ -2,7 +2,6 @@ import { ETIQUETAS_ESTADO, type CambioEstado } from "../types";
 
 const formato = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" });
 
-// Historial de estados de una donación, inscripción o solicitud: la trazabilidad que ve el propio usuario.
 export function LineaDeTiempo({ historial }: { historial: CambioEstado[] }) {
   if (historial.length === 0) return null;
   return (

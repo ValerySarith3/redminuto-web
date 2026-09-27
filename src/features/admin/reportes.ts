@@ -6,7 +6,6 @@ interface Conteo<K extends string = string> {
   total: number;
 }
 
-// Respuesta de GET /reportes/resumen.
 export interface Resumen {
   kpis: {
     totalRecaudado: number;
@@ -72,13 +71,11 @@ export const barrasCanal = (conteos: Conteo<CanalDonacion>[]) =>
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
-// "2026-09" → "sep 26"
 export const etiquetaMes = (mes: string) => {
   const [anio, m] = mes.split("-");
   return `${MESES[Number(m) - 1]} ${anio.slice(2)}`;
 };
 
-// Rellena con 0 los meses sin recaudo para que la serie sea continua (mínimo los últimos 6 meses).
 export function completarMeses(datos: { mes: string; total: number; cantidad: number }[]) {
   const hoy = new Date();
   const inicioMinimo = new Date(hoy.getFullYear(), hoy.getMonth() - 5, 1);
@@ -96,7 +93,6 @@ export function completarMeses(datos: { mes: string; total: number; cantidad: nu
 
 export const ETIQUETAS_ENTIDAD = { DONACION: "Donación", INSCRIPCION: "Inscripción", SOLICITUD: "Solicitud" } as const;
 
-// --- Periodos ---
 
 export type Periodo = "30d" | "90d" | "anio" | "todo";
 
@@ -127,7 +123,6 @@ export function queryRango(rango: { desde?: string; hasta?: string }) {
   return q ? `?${q}` : "";
 }
 
-// Lo que espera acción del admin (GET /reportes/pendientes), sin importar el periodo.
 export interface Pendientes {
   donaciones: number;
   inscripciones: number;
@@ -145,5 +140,4 @@ export type Seccion =
   | "actividades"
   | "usuarios";
 
-// Navegar a otra sección del panel, opcionalmente con un filtro de estado ya aplicado.
 export type IrA = (seccion: Seccion, filtro?: string) => void;

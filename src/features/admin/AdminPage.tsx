@@ -64,7 +64,6 @@ const grupos: { titulo: string; items: ItemMenu[] }[] = [
 const secciones = grupos.flatMap((g) => g.items);
 
 export function AdminPage() {
-  // La sección y el filtro viven en la URL (/admin?seccion=donaciones&filtro=PENDIENTE): sobreviven a un recargo.
   const [params, setParams] = useSearchParams();
   const seccion = (secciones.find((s) => s.id === params.get("seccion"))?.id ?? "resumen") as Seccion;
   const filtro = params.get("filtro") ?? undefined;
@@ -80,7 +79,6 @@ export function AdminPage() {
     [setParams],
   );
 
-  // Se recargan al cambiar de sección, así las insignias bajan cuando el admin resuelve algo.
   useEffect(() => {
     api.get<Pendientes>("/reportes/pendientes").then(setPendientes).catch(() => setPendientes(null));
   }, [seccion]);
@@ -95,7 +93,6 @@ export function AdminPage() {
               <p className="mt-0.5 font-serif text-sm">Casa Minuto de Dios</p>
             </div>
 
-            {/* Móvil: una fila deslizable. Escritorio: menú lateral agrupado. */}
             <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 lg:mx-0 lg:block lg:space-y-4 lg:overflow-visible lg:px-0 lg:pb-0">
               {grupos.map((grupo) => (
                 <div key={grupo.titulo} className="flex shrink-0 gap-2 lg:block lg:space-y-0.5">

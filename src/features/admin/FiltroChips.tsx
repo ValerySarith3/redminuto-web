@@ -1,4 +1,3 @@
-// Fila de filtros por estado con su conteo (Donaciones, Voluntariado, Solicitudes).
 export function FiltroChips<T extends string>({
   opciones,
   valor,

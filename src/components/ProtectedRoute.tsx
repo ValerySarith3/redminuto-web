@@ -13,7 +13,6 @@ export function ProtectedRoute({ children, rolRequerido }: { children: ReactNode
   return <>{children}</>;
 }
 
-// El administrador solo usa el panel administrativo: nunca ve las páginas públicas/de donante.
 export function RutaPublica({ children }: { children: ReactNode }) {
   const { usuario, cargando } = useAuth();
 

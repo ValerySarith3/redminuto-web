@@ -16,7 +16,6 @@ import { FiltroChips } from "./FiltroChips";
 
 const estados: EstadoSolicitud[] = ["PENDIENTE", "EN_REVISION", "APROBADA", "RECHAZADA"];
 
-// "ABIERTAS" = pendientes + en revisión (lo que todavía requiere gestión).
 type Filtro = "ABIERTAS" | "TODAS" | EstadoSolicitud;
 const filtros: Filtro[] = ["ABIERTAS", ...estados, "TODAS"];
 

@@ -1,4 +1,3 @@
-// Una cuenta USUARIO puede donar, ser voluntaria y pedir ayuda; ADMIN es el personal de la sede.
 export type Rol = "USUARIO" | "ADMIN";
 
 export interface Usuario {
@@ -150,7 +149,6 @@ export interface AvanceProgramaVoluntarios {
   porcentaje: number;
 }
 
-// Nombres legibles de los estados (el Badge los usa automáticamente).
 export const ETIQUETAS_ESTADO: Record<string, string> = {
   PENDIENTE: "Pendiente",
   COMPLETADA: "Completada",
@@ -173,7 +171,6 @@ export const ETIQUETAS_ROL: Record<Rol, string> = {
   ADMIN: "Administrador",
 };
 
-// "2026-10-10T00:00:00.000Z" → "sáb, 10 oct 2026" (la fecha de una actividad no tiene hora: se lee en UTC).
 export function formatoFechaActividad(fecha: string) {
   return new Date(fecha).toLocaleDateString("es-CO", {
     weekday: "short",

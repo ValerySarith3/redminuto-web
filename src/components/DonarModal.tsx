@@ -24,7 +24,6 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
   const [paso, setPaso] = useState<Paso>("formulario");
   const [error, setError] = useState<string | null>(null);
   const [comprobante, setComprobante] = useState<string | null>(null);
-  // Una referencia por intento de pago: si el envío se repite (doble clic, reintento) la API no duplica la donación.
   const [referencia] = useState(() => crypto.randomUUID());
   const toast = useToast();
 
@@ -41,7 +40,6 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
     setError(null);
     setPaso("procesando");
     try {
-      // Simula el tiempo de respuesta de una pasarela real (Wompi/PayU) en modo sandbox.
       await new Promise((resolve) => setTimeout(resolve, 1200));
       const donacion = await api.post<Donacion>("/donaciones", { monto, canal, campanaId: campana.id, referencia });
       setPaso("exito");

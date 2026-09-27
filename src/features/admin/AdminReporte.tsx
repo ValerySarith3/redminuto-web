@@ -33,7 +33,6 @@ function dentroDelRango(fecha: string, desde: string, hasta: string) {
   return (!desde || dia >= desde) && (!hasta || dia <= hasta);
 }
 
-// Reporte de gestión imprimible (Imprimir → "Guardar como PDF") y exportable a Excel (CSV).
 export function AdminReporte() {
   const toast = useToast();
   const hoy = new Date();
