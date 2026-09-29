@@ -131,13 +131,13 @@ export interface Pendientes {
 
 export type Seccion =
   | "resumen"
+  | "log-cambios"
   | "reporte"
   | "donaciones"
   | "voluntariado"
   | "solicitudes"
   | "programas"
   | "campanas"
-  | "actividades"
   | "usuarios";
 
 export type IrA = (seccion: Seccion, filtro?: string) => void;

@@ -8,6 +8,7 @@ import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { AuthPage } from "./features/auth/AuthPage";
 import { AdminPage } from "./features/admin/AdminPage";
 import { PrivacidadPage } from "./features/privacidad/PrivacidadPage";
+import { ResultadoPagoPage } from "./features/pagos/ResultadoPagoPage";
 
 function App() {
   return (
@@ -47,6 +48,14 @@ function App() {
           }
         />
         <Route path="/privacidad" element={<PrivacidadPage />} />
+        <Route
+          path="/donacion/resultado"
+          element={
+            <ProtectedRoute>
+              <ResultadoPagoPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/auth"
           element={

@@ -93,6 +93,10 @@ export function ProgramasPage() {
   const totalRecaudado = programas?.flatMap((p) => p.campanas).reduce((sum, c) => sum + (c.avance?.recaudado ?? 0), 0) ?? 0;
   const totalVoluntarios = programas?.reduce((sum, p) => sum + (p.avanceVoluntarios?.inscritos ?? 0), 0) ?? 0;
   const totalProgramas = programas?.length ?? 0;
+  const campanas =
+    programas?.flatMap((p) => p.campanas.map((c) => ({ ...c, programaNombre: p.nombre }))) ?? [];
+  const programasConVoluntariado =
+    programas?.filter((p) => p.avanceVoluntarios && p.avanceVoluntarios.cupo > 0) ?? [];
   const navigate = useNavigate();
 
   const acciones = [
@@ -299,83 +303,116 @@ export function ProgramasPage() {
       <div className="mx-auto max-w-6xl px-6 pb-14 pt-20">
         <div id="programas" className="scroll-mt-24" />
 
-        <Reveal className="mx-auto mb-12 max-w-xl text-center">
-          <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-royal-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-gold-400" /> Programas activos
-          </p>
-          <h2 className="mt-3 font-serif text-3xl font-medium text-ink-900 sm:text-4xl">
-            El estado real de cada <span className="font-serif-accent text-royal-700">campaña</span>
-          </h2>
-        </Reveal>
+        {/* Donaciones: cada campaña con su meta de recaudo */}
+        <section aria-labelledby="titulo-campanas">
+          <Reveal className="mx-auto mb-12 max-w-xl text-center">
+            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">
+              <Gift className="h-3.5 w-3.5" /> Campañas de donación
+            </p>
+            <h2 id="titulo-campanas" className="mt-3 font-serif text-3xl font-medium text-ink-900 sm:text-4xl">
+              Dona a una <span className="font-serif-accent text-royal-700">campaña</span>
+            </h2>
+            <p className="mt-3 text-sm text-ink-500">
+              Cada campaña tiene una meta. Tu aporte suma a lo recaudado y puedes seguir su avance en tiempo real.
+            </p>
+          </Reveal>
 
-        {error && <p className="mb-6 text-sm text-clay-600">{error}</p>}
+          {error && <p className="mb-6 text-sm text-clay-600">{error}</p>}
 
-        {!programas ? (
-          <div className="grid gap-6 sm:grid-cols-2">
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
-        ) : programas.length === 0 ? (
-          <Card className="text-center text-ink-500">Aún no hay programas registrados.</Card>
-        ) : (
-          <StaggerGroup className="grid gap-6 sm:grid-cols-2">
-            {programas.map((programa, index) => {
-              const Icono = iconoPrograma(programa.nombre);
-              return (
-                <StaggerItem key={programa.id} variants={staggerItem}>
-                <Card
-                  hover
-                  className="flex h-full flex-col gap-5 transition-transform duration-300 hover:-rotate-1"
-                >
-                  <div>
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-400">
-                      <span className="tabular-nums">{String(index + 1).padStart(2, "0")}</span>
-                      <span className="grid h-6 w-6 place-items-center rounded-full bg-royal-50">
-                        <Icono className="h-3.5 w-3.5 text-royal-700" strokeWidth={2} />
+          {!programas ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          ) : campanas.length === 0 ? (
+            <Card className="text-center text-ink-500">Por ahora no hay campañas de donación abiertas.</Card>
+          ) : (
+            <StaggerGroup className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {campanas.map((campana) => {
+                const Icono = iconoPrograma(campana.programaNombre);
+                return (
+                  <StaggerItem key={campana.id} variants={staggerItem}>
+                    <Card hover className="flex h-full flex-col border-t-4 border-t-gold-400">
+                      <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-gold-50 px-2.5 py-1 text-[11px] font-semibold text-gold-800">
+                        <Icono className="h-3.5 w-3.5" strokeWidth={2} /> {campana.programaNombre}
                       </span>
-                    </div>
-                    <h2 className="mt-2 font-serif text-lg font-medium text-ink-900">{programa.nombre}</h2>
-                    <p className="mt-1 text-sm text-ink-500">{programa.descripcion}</p>
-                  </div>
-
-                  {programa.avanceVoluntarios && (
-                    <ProgressBar
-                      porcentaje={programa.avanceVoluntarios.porcentaje}
-                      etiqueta={`Voluntarios: ${programa.avanceVoluntarios.inscritos}/${programa.avanceVoluntarios.cupo}`}
-                    />
-                  )}
-
-                  {programa.campanas.length > 0 && (
-                    <div className="space-y-3 border-t border-ink-200 pt-5">
-                      {programa.campanas.map((campana) => (
-                        <div key={campana.id}>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-semibold text-ink-800">{campana.titulo}</span>
-                            <Button variante="outline" className="px-3 py-1 text-xs" onClick={() => handleDonar(campana)}>
-                              Donar
-                            </Button>
-                          </div>
-                          {campana.avance && (
-                            <div className="mt-2">
-                              <ProgressBar
-                                compact
-                                porcentaje={campana.avance.porcentaje}
-                                etiqueta={`$${campana.avance.recaudado.toLocaleString("es-CO")} de $${campana.avance.meta.toLocaleString("es-CO")}`}
-                              />
-                            </div>
-                          )}
+                      <h3 className="mt-3 font-serif text-lg font-medium text-ink-900">{campana.titulo}</h3>
+                      <p className="mt-1 line-clamp-3 flex-1 text-sm text-ink-500">{campana.descripcion}</p>
+                      {campana.avance && (
+                        <div className="mt-5">
+                          <ProgressBar
+                            porcentaje={campana.avance.porcentaje}
+                            etiqueta={`$${campana.avance.recaudado.toLocaleString("es-CO")} de $${campana.avance.meta.toLocaleString("es-CO")}`}
+                          />
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </Card>
-                </StaggerItem>
-              );
-            })}
-          </StaggerGroup>
-        )}
+                      )}
+                      <Button variante="accent" className="mt-5 w-full" onClick={() => handleDonar(campana)}>
+                        <Gift className="h-4 w-4" /> Donar
+                      </Button>
+                    </Card>
+                  </StaggerItem>
+                );
+              })}
+            </StaggerGroup>
+          )}
+        </section>
+
+        {/* Voluntariado: cupos de voluntarios por programa */}
+        <section id="voluntariado-inicio" aria-labelledby="titulo-voluntariado" className="mt-24 scroll-mt-24">
+          <Reveal className="mx-auto mb-12 max-w-xl text-center">
+            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-royal-700">
+              <Users className="h-3.5 w-3.5" /> Voluntariado
+            </p>
+            <h2 id="titulo-voluntariado" className="mt-3 font-serif text-3xl font-medium text-ink-900 sm:text-4xl">
+              Súmate como <span className="font-serif-accent text-royal-700">voluntario</span>
+            </h2>
+            <p className="mt-3 text-sm text-ink-500">
+              Dona tu tiempo en las jornadas de cada programa. Mira cuántos cupos quedan e inscríbete.
+            </p>
+          </Reveal>
+
+          {!programas ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          ) : programasConVoluntariado.length === 0 ? (
+            <Card className="text-center text-ink-500">Por ahora no hay programas buscando voluntarios.</Card>
+          ) : (
+            <StaggerGroup className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {programasConVoluntariado.map((programa) => {
+                const Icono = iconoPrograma(programa.nombre);
+                const avance = programa.avanceVoluntarios!;
+                return (
+                  <StaggerItem key={programa.id} variants={staggerItem}>
+                    <Card hover className="flex h-full flex-col border-t-4 border-t-royal-500">
+                      <span className="grid h-10 w-10 place-items-center rounded-2xl bg-royal-50">
+                        <Icono className="h-5 w-5 text-royal-700" strokeWidth={2} />
+                      </span>
+                      <h3 className="mt-3 font-serif text-lg font-medium text-ink-900">{programa.nombre}</h3>
+                      <p className="mt-1 line-clamp-3 flex-1 text-sm text-ink-500">{programa.descripcion}</p>
+                      <div className="mt-5">
+                        <ProgressBar
+                          porcentaje={avance.porcentaje}
+                          etiqueta={
+                            avance.faltan > 0
+                              ? `${avance.inscritos} de ${avance.cupo} voluntarios · quedan ${avance.faltan} cupos`
+                              : `${avance.inscritos} de ${avance.cupo} voluntarios · cupos completos`
+                          }
+                        />
+                      </div>
+                      <Button variante="outline" className="mt-5 w-full" onClick={() => navigate("/voluntariado")}>
+                        <Users className="h-4 w-4" /> Ver jornadas
+                      </Button>
+                    </Card>
+                  </StaggerItem>
+                );
+              })}
+            </StaggerGroup>
+          )}
+        </section>
 
         <Reveal className="mt-16 border-t border-ink-200 pt-14">
           <TestimoniosSlider />

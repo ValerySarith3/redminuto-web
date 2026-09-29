@@ -3,6 +3,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { api } from "../../lib/api";
 import type { Campana, Programa } from "../../types";
 import { Card } from "../../components/ui/Card";
+import { Modal } from "../../components/ui/Modal";
 import { Button } from "../../components/ui/Button";
 import { Input, Select, Textarea } from "../../components/ui/Field";
 import { Skeleton } from "../../components/ui/Skeleton";
@@ -121,8 +122,23 @@ export function AdminCampanas() {
       )}
 
       {editandoId !== null && (
-        <Card className="animate-fade-up">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <Modal
+          titulo={editandoId === "nuevo" ? "Nueva campaña" : "Editar campaña"}
+          subtitulo="Una meta de recaudo dentro de un programa. Aparece en el inicio con su botón de donar."
+          onClose={cerrarFormulario}
+          ancho="max-w-lg"
+          pie={
+            <>
+              <Button type="button" variante="ghost" onClick={cerrarFormulario}>
+                Cancelar
+              </Button>
+              <Button type="submit" form="form-campana" cargando={guardando}>
+                {editandoId === "nuevo" ? "Crear campaña" : "Guardar cambios"}
+              </Button>
+            </>
+          }
+        >
+          <form id="form-campana" onSubmit={handleSubmit} className="space-y-4">
             <Select
               label="Programa"
               value={formulario.programaId}
@@ -157,16 +173,8 @@ export function AdminCampanas() {
               required
             />
             {error && <p className="text-sm text-clay-600">{error}</p>}
-            <div className="flex gap-3">
-              <Button type="button" variante="ghost" onClick={cerrarFormulario}>
-                Cancelar
-              </Button>
-              <Button type="submit" cargando={guardando}>
-                {editandoId === "nuevo" ? "Crear campaña" : "Guardar cambios"}
-              </Button>
-            </div>
           </form>
-        </Card>
+        </Modal>
       )}
 
       {!campanas ? (

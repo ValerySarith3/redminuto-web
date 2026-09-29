@@ -16,7 +16,28 @@ interface DonarModalProps {
   onDonacionCreada: (donacion: Donacion) => void;
 }
 
-type Paso = "formulario" | "procesando" | "exito";
+type Paso = "formulario" | "procesando" | "redirigiendo" | "exito";
+
+interface ConfigPagos {
+  pasarela: "payu" | null;
+  pruebas: boolean;
+}
+
+// PayU WebCheckout recibe los datos del pago como un formulario POST.
+function enviarAPayU(url: string, campos: Record<string, string>) {
+  const formulario = document.createElement("form");
+  formulario.method = "POST";
+  formulario.action = url;
+  for (const [nombre, valor] of Object.entries(campos)) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = nombre;
+    input.value = valor;
+    formulario.appendChild(input);
+  }
+  document.body.appendChild(formulario);
+  formulario.submit();
+}
 
 export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalProps) {
   const [monto, setMonto] = useState(50000);
@@ -25,7 +46,14 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
   const [error, setError] = useState<string | null>(null);
   const [comprobante, setComprobante] = useState<string | null>(null);
   const [referencia] = useState(() => crypto.randomUUID());
+  const [configPagos, setConfigPagos] = useState<ConfigPagos | null>(null);
   const toast = useToast();
+
+  useEffect(() => {
+    api.get<ConfigPagos>("/pagos/config").then(setConfigPagos).catch(() => setConfigPagos(null));
+  }, []);
+
+  const conPasarela = canal === "PASARELA" && configPagos?.pasarela === "payu";
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -40,6 +68,21 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
     setError(null);
     setPaso("procesando");
     try {
+      // Si la configuración no cargó al abrir (p. ej. la API se estaba reiniciando), se consulta de nuevo.
+      const config =
+        canal === "PASARELA" && !configPagos
+          ? await api.get<ConfigPagos>("/pagos/config").catch(() => null)
+          : configPagos;
+      if (config && config !== configPagos) setConfigPagos(config);
+      if (canal === "PASARELA" && config?.pasarela === "payu") {
+        const { urlCheckout, campos } = await api.post<{ urlCheckout: string; campos: Record<string, string> }>(
+          "/pagos/payu/iniciar",
+          { monto, campanaId: campana.id },
+        );
+        setPaso("redirigiendo");
+        enviarAPayU(urlCheckout, campos);
+        return;
+      }
       await new Promise((resolve) => setTimeout(resolve, 1200));
       const donacion = await api.post<Donacion>("/donaciones", { monto, canal, campanaId: campana.id, referencia });
       setPaso("exito");
@@ -99,7 +142,14 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
           <form onSubmit={handleSubmit}>
             <h3 className="pr-6 font-serif text-lg font-medium text-ink-900">Donar a {campana.titulo}</h3>
             <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-400">
-              <ShieldCheck className="h-3.5 w-3.5" /> Pago simulado en modo sandbox — no se cobra dinero real.
+              <ShieldCheck className="h-3.5 w-3.5" />
+              {conPasarela
+                ? configPagos?.pruebas
+                  ? "Pagarás en PayU (modo pruebas) — no se cobra dinero real."
+                  : "Pagarás de forma segura en PayU."
+                : canal === "PASARELA"
+                  ? "Pago simulado en modo sandbox — no se cobra dinero real."
+                  : "Casa Minuto de Dios confirmará el pago cuando lo reciba."}
             </p>
 
             <div className="mt-5 grid grid-cols-4 gap-2">
@@ -162,8 +212,19 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
               <Button type="button" variante="ghost" className="flex-1" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" variante="accent" className="flex-1" cargando={paso === "procesando"}>
-                {paso === "procesando" ? "Procesando..." : "Confirmar donación"}
+              <Button
+                type="submit"
+                variante="accent"
+                className="flex-1"
+                cargando={paso === "procesando" || paso === "redirigiendo"}
+              >
+                {paso === "redirigiendo"
+                  ? "Abriendo PayU..."
+                  : paso === "procesando"
+                    ? "Procesando..."
+                    : conPasarela
+                      ? "Ir a pagar"
+                      : "Confirmar donación"}
               </Button>
             </div>
           </form>

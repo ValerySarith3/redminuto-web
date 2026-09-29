@@ -15,12 +15,13 @@ import {
 } from "recharts";
 import {
   ArrowRight,
-  CalendarDays,
   CheckCircle2,
+  ChevronDown,
   ClipboardList,
   HandCoins,
   HandHeart,
   Heart,
+  Printer,
   LifeBuoy,
   MapPin,
   Sparkles,
@@ -31,11 +32,10 @@ import {
 import { api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useCountUp } from "../../lib/useCountUp";
-import { ETIQUETAS_ESTADO } from "../../types";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { pesos, pesosCompactos, type Tono } from "./graficos";
+import { InformeGestion } from "./AdminReporte";
 import {
-  ETIQUETAS_ENTIDAD,
   PERIODOS,
   barrasCanal,
   barrasTipoApoyo,
@@ -54,13 +54,19 @@ const AZUL = "#0175dd";
 const AZUL_SUAVE = "#86beff";
 const HEX_TONO: Record<Tono, string> = { exito: AZUL, proceso: AZUL_SUAVE, espera: "#f0b90d", rechazo: "#d33f2e" };
 
-const tiempoRelativo = new Intl.RelativeTimeFormat("es", { numeric: "auto" });
-function haceCuanto(fecha: string) {
-  const minutos = Math.round((new Date(fecha).getTime() - Date.now()) / 60000);
-  if (Math.abs(minutos) < 60) return tiempoRelativo.format(minutos, "minute");
-  const horas = Math.round(minutos / 60);
-  if (Math.abs(horas) < 24) return tiempoRelativo.format(horas, "hour");
-  return tiempoRelativo.format(Math.round(horas / 24), "day");
+type Area = "donaciones" | "voluntariado" | "solicitudes" | "comunidad";
+
+const AREAS: Area[] = ["donaciones", "voluntariado", "solicitudes", "comunidad"];
+const CLAVE_AREAS = "redminuto_tablero_areas";
+
+function areasGuardadas(): Area[] {
+  try {
+    const guardado = JSON.parse(localStorage.getItem(CLAVE_AREAS) ?? "null");
+    if (Array.isArray(guardado)) return guardado.filter((a): a is Area => AREAS.includes(a));
+  } catch {
+    // Sin acceso al almacenamiento: se usa el valor por defecto.
+  }
+  return ["donaciones"];
 }
 
 function saludo() {
@@ -71,6 +77,30 @@ function saludo() {
 export function AdminResumen({ irA }: { irA: IrA }) {
   const { usuario } = useAuth();
   const [periodo, setPeriodo] = useState<Periodo>("todo");
+  const [abiertos, setAbiertos] = useState<Area[]>(areasGuardadas);
+
+  function guardarAreas(areas: Area[]) {
+    setAbiertos(areas);
+    try {
+      localStorage.setItem(CLAVE_AREAS, JSON.stringify(areas));
+    } catch {
+      // No es crítico si no se puede recordar.
+    }
+  }
+  const alternar = (area: Area) =>
+    guardarAreas(abiertos.includes(area) ? abiertos.filter((a) => a !== area) : [...abiertos, area]);
+  const abrirTodo = (abrir: boolean) => guardarAreas(abrir ? AREAS : []);
+
+  // El PDF no es una foto del tablero: se arma el informe de gestión del periodo elegido y se imprime.
+  const [informe, setInforme] = useState(false);
+  const rangoInforme = rangoDePeriodo(periodo);
+
+  useEffect(() => {
+    if (!informe) return;
+    const terminar = () => setInforme(false);
+    window.addEventListener("afterprint", terminar);
+    return () => window.removeEventListener("afterprint", terminar);
+  }, [informe]);
   const [resumen, setResumen] = useState<Resumen | null>(null);
   const [pendientes, setPendientes] = useState<Pendientes | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +124,21 @@ export function AdminResumen({ irA }: { irA: IrA }) {
   const hoy = new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" });
 
   return (
-    <div className="space-y-6">
+    <>
+    {informe && (
+      <div className="hidden [print-color-adjust:exact] print:block">
+        <InformeGestion
+          desde={rangoInforme.desde ?? ""}
+          hasta={rangoInforme.hasta ?? ""}
+          onListo={() => setTimeout(() => window.print(), 300)}
+          onError={(mensaje) => {
+            setInforme(false);
+            setError(`No se pudo preparar el informe: ${mensaje}`);
+          }}
+        />
+      </div>
+    )}
+    <div className="space-y-6 print:hidden">
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-royal-700 via-royal-800 to-royal-950 px-6 py-7 text-white sm:px-8">
         <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-gold-400/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-royal-400/30 blur-3xl" />
@@ -108,6 +152,7 @@ export function AdminResumen({ irA }: { irA: IrA }) {
               Así va Casa Minuto de Dios: donaciones, voluntariado y solicitudes de ayuda en un solo lugar.
             </p>
           </div>
+          <div className="flex flex-wrap items-center gap-2 print:hidden">
           <div className="flex flex-wrap gap-1 rounded-full bg-white/10 p-1 backdrop-blur">
             {PERIODOS.map((p) => (
               <button
@@ -122,6 +167,15 @@ export function AdminResumen({ irA }: { irA: IrA }) {
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={() => setInforme(true)}
+            disabled={!resumen || informe}
+            className="inline-flex items-center gap-1.5 rounded-full bg-gold-400 px-4 py-2 text-xs font-semibold text-royal-900 shadow transition-colors hover:bg-gold-300 disabled:opacity-50"
+          >
+            <Printer className="h-4 w-4" /> {informe ? "Preparando informe…" : "Imprimir / PDF"}
+          </button>
+          </div>
         </div>
       </section>
 
@@ -132,6 +186,7 @@ export function AdminResumen({ irA }: { irA: IrA }) {
           <div className="grid gap-6 lg:grid-cols-3">
             <Skeleton className="h-64 lg:col-span-2" />
             <Skeleton className="h-64" />
+            <Skeleton className="h-12 w-72 lg:col-span-3" />
             <Skeleton className="h-80 lg:col-span-3" />
           </div>
         )
@@ -173,97 +228,158 @@ export function AdminResumen({ irA }: { irA: IrA }) {
             <PorAtender pendientes={pendientes} irA={irA} />
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-3">
-            <EvolucionRecaudo datos={resumen.recaudoPorMes} className="lg:col-span-2" />
-            <Tarjeta titulo="Recaudo por canal" subtitulo="Donaciones confirmadas">
-              <BarrasCanal datos={barrasCanal(resumen.recaudoPorCanal)} />
-            </Tarjeta>
+          <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
+            <div>
+              <h3 className="font-serif text-lg font-medium text-ink-900">Detalle por área</h3>
+              <p className="text-xs text-ink-400 print:hidden">Abre cada área para ver sus gráficas y listados.</p>
+            </div>
+            <div className="flex gap-2 text-xs font-semibold print:hidden">
+              <button type="button" onClick={() => abrirTodo(true)} className="text-royal-700 hover:text-royal-900">
+                Abrir todo
+              </button>
+              <span className="text-ink-300">·</span>
+              <button type="button" onClick={() => abrirTodo(false)} className="text-royal-700 hover:text-royal-900">
+                Cerrar todo
+              </button>
+            </div>
           </div>
 
-          <Tarjeta
-            titulo="Avance de campañas"
-            subtitulo="Recaudo confirmado frente a la meta"
-            accion={{ texto: "Ver campañas", onClick: () => irA("campanas") }}
-          >
-            {resumen.campanas.length === 0 ? (
-              <Vacio texto="Aún no hay campañas." />
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {resumen.campanas.map((c) => (
-                  <div
-                    key={c.id}
-                    className="flex items-center gap-4 rounded-2xl border border-ink-100 bg-ink-50/60 p-4 transition-colors hover:border-royal-200 hover:bg-royal-50/50"
-                  >
-                    <Anillo porcentaje={c.porcentaje} />
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-ink-800">{c.titulo}</p>
-                      <p className="truncate text-xs text-ink-400">{c.programa}</p>
-                      <p className="mt-1.5 text-sm tabular-nums text-ink-600">
-                        <strong className="text-ink-900">{pesosCompactos(c.recaudado)}</strong> de {pesosCompactos(c.meta)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Tarjeta>
-
-          <div className="grid gap-6 lg:grid-cols-3">
-            <EstadoProcesos resumen={resumen} irA={irA} />
-            <Tarjeta titulo="¿Qué ayuda se pide?" subtitulo="Solicitudes por tipo de apoyo">
-              <BarrasTipo datos={barrasTipoApoyo(resumen.solicitudesPorTipo)} />
-            </Tarjeta>
-            <Participacion datos={resumen.participacion} />
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-3">
-            <Tarjeta
-              titulo="Próximas jornadas"
-              accion={{ texto: "Gestionar", onClick: () => irA("actividades") }}
+          <div className="space-y-3">
+            <Apartado
+              icono={Wallet}
+              titulo="Donaciones y recaudo"
+              descripcion="Cuánto dinero ha entrado, por qué medio y cómo van las metas de cada campaña."
+              resumen={`${pesosCompactos(resumen.kpis.totalRecaudado)} recaudados`}
+              abierto={abiertos.includes("donaciones")}
+              onToggle={() => alternar("donaciones")}
             >
-              {resumen.proximasActividades.length === 0 ? (
-                <Vacio texto="No hay jornadas programadas." />
-              ) : (
-                <ul className="space-y-3">
-                  {resumen.proximasActividades.map((a) => {
-                    const fecha = new Date(a.fecha);
-                    const lleno = a.inscritos >= a.cupo;
-                    return (
-                      <li key={a.id} className="flex items-center gap-3">
-                        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-royal-50 text-center leading-none">
-                          <span>
-                            <span className="block font-serif text-xl font-semibold text-royal-700">
-                              {fecha.getUTCDate()}
-                            </span>
-                            <span className="text-[10px] font-semibold uppercase text-royal-500">
-                              {fecha.toLocaleDateString("es-CO", { month: "short", timeZone: "UTC" })}
-                            </span>
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-ink-800">{a.titulo}</p>
-                          <p className="flex items-center gap-1 truncate text-xs text-ink-400">
-                            <MapPin className="h-3 w-3 shrink-0" /> {a.horaInicio} · {a.lugar}
-                          </p>
-                        </div>
-                        <span
-                          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${
-                            lleno ? "bg-royal-600 text-white" : "bg-ink-100 text-ink-600"
-                          }`}
+              <div className="grid gap-6 lg:grid-cols-3">
+                <EvolucionRecaudo datos={resumen.recaudoPorMes} className="lg:col-span-2" />
+                <Tarjeta titulo="Recaudo por medio de pago" subtitulo="Donaciones confirmadas">
+                  <BarrasCanal datos={barrasCanal(resumen.recaudoPorCanal)} />
+                </Tarjeta>
+                <Tarjeta
+                  className="lg:col-span-2"
+                  titulo="Avance de campañas"
+                  subtitulo="Recaudo confirmado frente a la meta"
+                  accion={{ texto: "Ver campañas", onClick: () => irA("campanas") }}
+                >
+                  {resumen.campanas.length === 0 ? (
+                    <Vacio texto="Aún no hay campañas." />
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {resumen.campanas.map((c) => (
+                        <div
+                          key={c.id}
+                          className="flex items-center gap-4 rounded-2xl border border-ink-100 bg-ink-50/60 p-4 transition-colors hover:border-royal-200 hover:bg-royal-50/50"
                         >
-                          {a.inscritos}/{a.cupo}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </Tarjeta>
-            <ActividadReciente datos={resumen.actividadReciente} className="lg:col-span-2" />
+                          <Anillo porcentaje={c.porcentaje} />
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-ink-800">{c.titulo}</p>
+                            <p className="truncate text-xs text-ink-400">{c.programa}</p>
+                            <p className="mt-1.5 text-sm tabular-nums text-ink-600">
+                              <strong className="text-ink-900">{pesosCompactos(c.recaudado)}</strong> de {pesosCompactos(c.meta)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Tarjeta>
+
+                <EstadoProcesos resumen={resumen} irA={irA} proceso="donaciones" />
+              </div>
+            </Apartado>
+
+            <Apartado
+              icono={HandHeart}
+              titulo="Voluntariado y jornadas"
+              descripcion="Las próximas jornadas programadas y en qué van las inscripciones de voluntarios."
+              resumen={`${resumen.proximasActividades.length} jornadas próximas`}
+              abierto={abiertos.includes("voluntariado")}
+              onToggle={() => alternar("voluntariado")}
+            >
+              <div className="grid gap-6 lg:grid-cols-3">
+                <Tarjeta
+                  className="lg:col-span-2"
+                  titulo="Próximas jornadas"
+                  accion={{ texto: "Gestionar", onClick: () => irA("programas") }}
+                >
+                  {resumen.proximasActividades.length === 0 ? (
+                    <Vacio texto="No hay jornadas programadas." />
+                  ) : (
+                    <ul className="space-y-3">
+                      {resumen.proximasActividades.map((a) => {
+                        const fecha = new Date(a.fecha);
+                        const lleno = a.inscritos >= a.cupo;
+                        return (
+                          <li key={a.id} className="flex items-center gap-3">
+                            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-royal-50 text-center leading-none">
+                              <span>
+                                <span className="block font-serif text-xl font-semibold text-royal-700">
+                                  {fecha.getUTCDate()}
+                                </span>
+                                <span className="text-[10px] font-semibold uppercase text-royal-500">
+                                  {fecha.toLocaleDateString("es-CO", { month: "short", timeZone: "UTC" })}
+                                </span>
+                              </span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-ink-800">{a.titulo}</p>
+                              <p className="flex items-center gap-1 truncate text-xs text-ink-400">
+                                <MapPin className="h-3 w-3 shrink-0" /> {a.horaInicio} · {a.lugar}
+                              </p>
+                            </div>
+                            <span
+                              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${
+                                lleno ? "bg-royal-600 text-white" : "bg-ink-100 text-ink-600"
+                              }`}
+                            >
+                              {a.inscritos}/{a.cupo}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </Tarjeta>
+                <EstadoProcesos resumen={resumen} irA={irA} proceso="voluntariado" />
+              </div>
+            </Apartado>
+
+            <Apartado
+              icono={LifeBuoy}
+              titulo="Solicitudes de ayuda"
+              descripcion="Qué tipo de ayuda piden las personas y en qué estado están sus solicitudes."
+              resumen={`${resumen.kpis.solicitudesAbiertas} abiertas`}
+              abierto={abiertos.includes("solicitudes")}
+              onToggle={() => alternar("solicitudes")}
+            >
+              <div className="grid gap-6 lg:grid-cols-3">
+                <Tarjeta className="lg:col-span-2" titulo="¿Qué ayuda se pide?" subtitulo="Solicitudes por tipo de apoyo">
+                  <BarrasTipo datos={barrasTipoApoyo(resumen.solicitudesPorTipo)} />
+                </Tarjeta>
+                <EstadoProcesos resumen={resumen} irA={irA} proceso="solicitudes" />
+              </div>
+            </Apartado>
+
+            <Apartado
+              icono={Users}
+              titulo="Personas registradas"
+              descripcion="Cuántas personas tienen cuenta en la plataforma y de qué forma participan."
+              resumen={`${resumen.participacion.usuariosRegistrados} personas`}
+              abierto={abiertos.includes("comunidad")}
+              onToggle={() => alternar("comunidad")}
+            >
+              <div className="max-w-2xl">
+                <Participacion datos={resumen.participacion} />
+              </div>
+            </Apartado>
           </div>
         </>
       )}
     </div>
+    </>
   );
 }
 
@@ -284,7 +400,7 @@ function Tarjeta({
   extra?: ReactNode;
 }) {
   return (
-    <section className={`min-w-0 rounded-3xl border border-ink-200/70 bg-cream-50 p-6 shadow-sm shadow-royal-900/[0.03] ${className}`}>
+    <section className={`min-w-0 rounded-3xl border border-ink-200/70 bg-cream-50 p-6 shadow-sm shadow-royal-900/[0.03] print:break-inside-avoid print:shadow-none ${className}`}>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-serif text-lg font-medium text-ink-900">{titulo}</h3>
@@ -589,8 +705,13 @@ function Anillo({ porcentaje }: { porcentaje: number }) {
 
 type Proceso = "donaciones" | "voluntariado" | "solicitudes";
 
-function EstadoProcesos({ resumen, irA }: { resumen: Resumen; irA: IrA }) {
-  const [proceso, setProceso] = useState<Proceso>("solicitudes");
+const TITULO_PROCESO: Record<Proceso, string> = {
+  donaciones: "Estado de las donaciones",
+  voluntariado: "Estado de las inscripciones",
+  solicitudes: "Estado de las solicitudes",
+};
+
+function EstadoProcesos({ resumen, irA, proceso }: { resumen: Resumen; irA: IrA; proceso: Proceso }) {
   const conteos = {
     donaciones: resumen.donacionesPorEstado,
     voluntariado: resumen.inscripcionesPorEstado,
@@ -600,28 +721,7 @@ function EstadoProcesos({ resumen, irA }: { resumen: Resumen; irA: IrA }) {
   const total = segmentos.reduce((t, s) => t + s.valor, 0);
 
   return (
-    <Tarjeta titulo="Estado de los procesos" subtitulo="Clic en un estado para ver esos registros">
-      <div className="mb-4 flex gap-1 rounded-full bg-ink-100 p-1">
-        {(
-          [
-            ["solicitudes", "Solicitudes"],
-            ["voluntariado", "Voluntariado"],
-            ["donaciones", "Donaciones"],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setProceso(id)}
-            className={`flex-1 rounded-full px-2 py-1 text-xs font-semibold transition-all ${
-              proceso === id ? "bg-cream-50 text-royal-700 shadow-sm" : "text-ink-500 hover:text-ink-700"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
+    <Tarjeta titulo={TITULO_PROCESO[proceso]} subtitulo="Clic en un estado para ver esos registros">
       <div className="relative mx-auto h-40 w-40">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -726,7 +826,7 @@ function Participacion({ datos }: { datos: Resumen["participacion"] }) {
     { icono: LifeBuoy, etiqueta: "Han pedido ayuda", valor: datos.beneficiarios },
   ];
   return (
-    <Tarjeta titulo="La comunidad" subtitulo="Personas registradas y cómo participan (histórico)">
+    <Tarjeta titulo="Cómo participan" subtitulo="Personas registradas y lo que han hecho (histórico)">
       <div className="flex items-center gap-3 rounded-2xl bg-royal-50 p-4">
         <Sparkles className="h-5 w-5 text-royal-600" />
         <p className="text-sm text-royal-900">
@@ -755,50 +855,52 @@ function Participacion({ datos }: { datos: Resumen["participacion"] }) {
   );
 }
 
-const ICONO_ENTIDAD: Record<Resumen["actividadReciente"][number]["entidad"], LucideIcon> = {
-  DONACION: HandCoins,
-  INSCRIPCION: HandHeart,
-  SOLICITUD: LifeBuoy,
-};
-
-function ActividadReciente({ datos, className }: { datos: Resumen["actividadReciente"]; className?: string }) {
+function Apartado({
+  icono: Icono,
+  titulo,
+  descripcion,
+  resumen,
+  abierto,
+  onToggle,
+  children,
+}: {
+  icono: LucideIcon;
+  titulo: string;
+  descripcion: string;
+  resumen: string;
+  abierto: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
   return (
-    <Tarjeta className={className} titulo="Actividad reciente" subtitulo="Últimos movimientos de la bitácora">
-      {datos.length === 0 ? (
-        <Vacio texto="Todavía no hay movimientos." />
-      ) : (
-        <ol className="relative space-y-4 before:absolute before:bottom-2 before:left-[19px] before:top-2 before:w-px before:bg-ink-200">
-          {datos.map((h) => {
-            const Icono = ICONO_ENTIDAD[h.entidad];
-            const nuevo = ETIQUETAS_ESTADO[h.estadoNuevo] ?? h.estadoNuevo;
-            return (
-              <li key={h.id} className="relative flex gap-3">
-                <span
-                  className={`relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-full ring-4 ring-cream-50 ${
-                    h.porAdmin ? "bg-royal-600 text-white" : "bg-royal-50 text-royal-700"
-                  }`}
-                >
-                  <Icono className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1 pt-0.5">
-                  <p className="text-sm text-ink-700">
-                    <strong className="text-ink-900">{h.usuario}</strong>{" "}
-                    {h.estadoAnterior
-                      ? `cambió la ${ETIQUETAS_ENTIDAD[h.entidad].toLowerCase()} #${h.entidadId} a`
-                      : `registró la ${ETIQUETAS_ENTIDAD[h.entidad].toLowerCase()} #${h.entidadId} como`}{" "}
-                    <span className="font-semibold text-royal-700">{nuevo.toLowerCase()}</span>
-                  </p>
-                  <p className="text-xs text-ink-400">
-                    <CalendarDays className="mr-1 inline h-3 w-3" />
-                    {haceCuanto(h.creadoEn)}
-                    {h.nota ? ` · ${h.nota}` : ""}
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-    </Tarjeta>
+    <section
+      className={`rounded-3xl border transition-colors ${
+        abierto ? "border-royal-200 bg-royal-50/30" : "border-ink-200/70 bg-cream-50 hover:border-royal-200"
+      }`}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={abierto}
+        className="flex w-full items-center gap-4 px-5 py-4 text-left"
+      >
+        <span
+          className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${
+            abierto ? "bg-royal-600 text-white" : "bg-royal-50 text-royal-700"
+          }`}
+        >
+          <Icono className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-serif text-lg font-medium text-ink-900">{titulo}</span>
+          <span className="block text-xs text-ink-500">{descripcion}</span>
+        </span>
+        <span className="hidden shrink-0 rounded-full bg-ink-100 px-3 py-1 text-xs font-semibold tabular-nums text-ink-700 sm:block">
+          {resumen}
+        </span>
+        <ChevronDown className={`h-5 w-5 shrink-0 text-ink-400 transition-transform ${abierto ? "rotate-180" : ""}`} />
+      </button>
+      {abierto && <div className="animate-fade-up px-5 pb-5">{children}</div>}
+    </section>
   );
 }

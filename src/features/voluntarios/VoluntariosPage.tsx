@@ -9,6 +9,7 @@ import {
   type AvanceProgramaVoluntarios,
   type InscripcionVoluntario,
   type Programa,
+  type Usuario,
 } from "../../types";
 import { Card } from "../../components/ui/Card";
 import { ProgressBar } from "../../components/ui/ProgressBar";
@@ -17,6 +18,9 @@ import { SkeletonCard } from "../../components/ui/Skeleton";
 import { PageHeader } from "../../components/PageHeader";
 import { useToast } from "../../components/ui/Toast";
 import { StaggerGroup, StaggerItem, staggerItem } from "../../components/Reveal";
+import { DatosContactoModal } from "./DatosContactoModal";
+
+type Destino = { actividadId: number };
 
 interface ProgramaConAvance extends Programa {
   avance: AvanceProgramaVoluntarios | null;
@@ -30,6 +34,7 @@ export function VoluntariosPage() {
   const [mias, setMias] = useState<InscripcionVoluntario[]>([]);
   const [inscribiendo, setInscribiendo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendiente, setPendiente] = useState<{ destino: Destino; nombre: string; perfil: Usuario | null } | null>(null);
 
   useEffect(() => {
     cargar();
@@ -56,12 +61,21 @@ export function VoluntariosPage() {
     }
   }
 
-  async function inscribirse(destino: { actividadId: number } | { programaId: number }, nombre: string) {
+  async function inscribirse(destino: Destino, nombre: string) {
     if (!usuario) {
       window.location.href = "/auth";
       return;
     }
-    const clave = "actividadId" in destino ? `a${destino.actividadId}` : `p${destino.programaId}`;
+    const perfil = await api.get<Usuario>("/usuarios/yo").catch(() => null);
+    if (!perfil?.telefono) {
+      setPendiente({ destino, nombre, perfil });
+      return;
+    }
+    await confirmarInscripcion(destino, nombre);
+  }
+
+  async function confirmarInscripcion(destino: Destino, nombre: string) {
+    const clave = `a${destino.actividadId}`;
     setInscribiendo(clave);
     setError(null);
     try {
@@ -78,7 +92,6 @@ export function VoluntariosPage() {
   }
 
   const inscritoEnActividad = (id: number) => mias.some((i) => i.actividadId === id);
-  const inscritoEnPrograma = (id: number) => mias.some((i) => i.programaId === id && !i.actividadId);
 
   return (
     <div>
@@ -113,10 +126,10 @@ export function VoluntariosPage() {
                         <p className="mt-1 text-sm text-ink-500">{programa.descripcion}</p>
                       </div>
                     </div>
-                    {programa.avance && (
+                    {programa.avance && programa.avance.cupo > 0 && (
                       <ProgressBar
                         porcentaje={programa.avance.porcentaje}
-                        etiqueta={`Meta del programa: ${programa.avance.inscritos}/${programa.avance.cupo} voluntarios`}
+                        etiqueta={`Cupos en las próximas jornadas: ${programa.avance.inscritos}/${programa.avance.cupo} voluntarios`}
                       />
                     )}
 
@@ -173,27 +186,9 @@ export function VoluntariosPage() {
                         })}
                       </div>
                     ) : (
-                      <div className="mt-auto space-y-3">
-                        <p className="text-sm text-ink-400">
-                          Aún no hay jornadas programadas. Puedes inscribirte al programa y te contactaremos.
-                        </p>
-                        <Button
-                          variante={inscritoEnPrograma(programa.id) ? "outline" : "primary"}
-                          disabled={inscritoEnPrograma(programa.id) || (programa.avance?.faltan ?? 1) <= 0}
-                          cargando={inscribiendo === `p${programa.id}`}
-                          onClick={() => inscribirse({ programaId: programa.id }, programa.nombre)}
-                        >
-                          {inscritoEnPrograma(programa.id) ? (
-                            <>
-                              <CheckCircle2 className="h-4 w-4" /> Ya estás inscrito
-                            </>
-                          ) : (programa.avance?.faltan ?? 1) <= 0 ? (
-                            "Cupo lleno"
-                          ) : (
-                            "Inscribirme al programa"
-                          )}
-                        </Button>
-                      </div>
+                      <p className="mt-auto rounded-xl border border-dashed border-ink-200 px-4 py-3 text-sm text-ink-400">
+                        Aún no hay jornadas programadas para este programa. Vuelve pronto.
+                      </p>
                     )}
                   </Card>
                 </StaggerItem>
@@ -202,6 +197,17 @@ export function VoluntariosPage() {
           </StaggerGroup>
         )}
       </div>
+
+      {pendiente && (
+        <DatosContactoModal
+          perfil={pendiente.perfil}
+          onClose={() => setPendiente(null)}
+          onGuardado={() => {
+            setPendiente(null);
+            confirmarInscripcion(pendiente.destino, pendiente.nombre);
+          }}
+        />
+      )}
     </div>
   );
 }

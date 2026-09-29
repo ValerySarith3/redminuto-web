@@ -7,6 +7,8 @@ import { Button } from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { useToast } from "../../components/ui/Toast";
 import { FiltroChips } from "./FiltroChips";
+import { FichaUsuario } from "./FichaUsuario";
+import { Eye } from "lucide-react";
 
 type Filtro = "TODAS" | EstadoDonacion;
 
@@ -21,6 +23,7 @@ export function AdminDonaciones({ filtroInicial }: { filtroInicial?: string }) {
     filtros.includes(filtroInicial as Filtro) ? (filtroInicial as Filtro) : "PENDIENTE",
   );
   const [actualizando, setActualizando] = useState<number | null>(null);
+  const [fichaId, setFichaId] = useState<number | null>(null);
 
   useEffect(() => {
     api.get<Donacion[]>("/donaciones").then(setDonaciones);
@@ -48,14 +51,35 @@ export function AdminDonaciones({ filtroInicial }: { filtroInicial?: string }) {
     }
   }
 
+  const [descargando, setDescargando] = useState(false);
+
+  async function descargarCsv() {
+    setDescargando(true);
+    try {
+      await api.descargar(`/reportes/exportar/donaciones`, `redminuto-donaciones-${new Date().toISOString().slice(0, 10)}.csv`);
+    } catch (e) {
+      toast.fallo("No se pudo descargar el archivo", e instanceof Error ? e.message : undefined);
+    } finally {
+      setDescargando(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
         <h2 className="font-serif text-xl font-medium text-ink-900">Donaciones</h2>
         <p className="mt-1 text-sm text-ink-500">
           Las donaciones por transferencia, llave o efectivo quedan pendientes y solo suman a la meta de la campaña cuando
           las confirmas.
         </p>
+        </div>
+        <Button variante="outline" cargando={descargando} onClick={descargarCsv}>
+          <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          Exportar (CSV)
+        </Button>
       </div>
 
       <FiltroChips
@@ -94,32 +118,46 @@ export function AdminDonaciones({ filtroInicial }: { filtroInicial?: string }) {
                 </p>
                 <p className="mt-1 text-xs uppercase tracking-wide text-ink-400">
                   {donacion.numeroComprobante} · {formatoFecha.format(new Date(donacion.creadoEn))}
-                  {donacion.pago ? ` · Ref. ${donacion.pago.referencia.slice(0, 8)}` : ""}
+                  {donacion.pago ? ` · Ref. de pago ${donacion.pago.referencia}` : ""}
                 </p>
               </div>
-              {donacion.estado === "PENDIENTE" && (
-                <div className="flex shrink-0 gap-2">
-                  <Button
-                    className="px-3 py-1.5 text-xs"
-                    cargando={actualizando === donacion.id}
-                    onClick={() => cambiarEstado(donacion, "COMPLETADA")}
-                  >
-                    Confirmar pago
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                {donacion.donanteId && (
+                  <Button variante="ghost" className="px-3 py-1.5 text-xs" onClick={() => setFichaId(donacion.donanteId!)}>
+                    <Eye className="h-3.5 w-3.5" /> Ver datos
                   </Button>
-                  <Button
-                    variante="danger"
-                    className="px-3 py-1.5 text-xs"
-                    cargando={actualizando === donacion.id}
-                    onClick={() => cambiarEstado(donacion, "FALLIDA")}
-                  >
-                    Marcar fallida
-                  </Button>
-                </div>
-              )}
+                )}
+                {donacion.estado === "PENDIENTE" && donacion.canal === "PASARELA" && (
+                  <p className="max-w-56 rounded-xl bg-royal-50 px-3 py-2 text-xs text-royal-800">
+                    Esperando la respuesta de PayU. Se confirma automáticamente, no necesitas hacer nada.
+                  </p>
+                )}
+                {donacion.estado === "PENDIENTE" && donacion.canal !== "PASARELA" && (
+                  <>
+                    <Button
+                      className="px-3 py-1.5 text-xs"
+                      cargando={actualizando === donacion.id}
+                      onClick={() => cambiarEstado(donacion, "COMPLETADA")}
+                    >
+                      Confirmar pago
+                    </Button>
+                    <Button
+                      variante="danger"
+                      className="px-3 py-1.5 text-xs"
+                      cargando={actualizando === donacion.id}
+                      onClick={() => cambiarEstado(donacion, "FALLIDA")}
+                    >
+                      Marcar fallida
+                    </Button>
+                  </>
+                )}
+              </div>
             </Card>
           ))}
         </div>
       )}
+
+      {fichaId !== null && <FichaUsuario usuarioId={fichaId} seccion="donaciones" onClose={() => setFichaId(null)} />}
     </div>
   );
 }

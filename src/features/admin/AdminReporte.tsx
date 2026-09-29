@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Download, Printer } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Download, FileSpreadsheet, Printer } from "lucide-react";
 import { api } from "../../lib/api";
 import {
   ETIQUETAS_CANAL,
@@ -38,33 +38,19 @@ export function AdminReporte() {
   const hoy = new Date();
   const [desde, setDesde] = useState(aISO(new Date(hoy.getFullYear(), hoy.getMonth(), 1)));
   const [hasta, setHasta] = useState(aISO(hoy));
-  const [datos, setDatos] = useState<Datos | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [listo, setListo] = useState(false);
   const [descargando, setDescargando] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (desde && hasta && desde > hasta) {
-      setError("La fecha inicial no puede ser posterior a la final.");
-      return;
+  async function descargarExcel() {
+    setDescargando("excel");
+    try {
+      await api.descargar(`/reportes/exportar/excel${queryRango({ desde, hasta })}`, `redminuto-reporte-${desde}-a-${hasta}.xlsx`);
+    } catch (e) {
+      toast.fallo("No se pudo descargar el Excel", e instanceof Error ? e.message : undefined);
+    } finally {
+      setDescargando(null);
     }
-    setError(null);
-    setDatos(null);
-    Promise.all([
-      api.get<Resumen>(`/reportes/resumen${queryRango({ desde, hasta })}`),
-      api.get<Donacion[]>("/donaciones"),
-      api.get<InscripcionVoluntario[]>("/voluntariado"),
-      api.get<SolicitudBeneficiario[]>("/beneficiarios"),
-    ])
-      .then(([resumen, donaciones, inscripciones, solicitudes]) =>
-        setDatos({
-          resumen,
-          donaciones: donaciones.filter((d) => dentroDelRango(d.creadoEn, desde, hasta)),
-          inscripciones: inscripciones.filter((i) => dentroDelRango(i.creadoEn, desde, hasta)),
-          solicitudes: solicitudes.filter((s) => dentroDelRango(s.creadoEn, desde, hasta)),
-        }),
-      )
-      .catch((e) => setError(e instanceof Error ? e.message : "No se pudo generar el reporte"));
-  }, [desde, hasta]);
+  }
 
   async function descargarCsv(tipo: "donaciones" | "inscripciones" | "solicitudes") {
     setDescargando(tipo);
@@ -77,17 +63,16 @@ export function AdminReporte() {
     }
   }
 
-  const periodoTexto = `${formatoFechaLarga.format(new Date(`${desde}T00:00:00`))} – ${formatoFechaLarga.format(new Date(`${hasta}T00:00:00`))}`;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4 print:hidden">
         <div className="flex flex-wrap items-end gap-3">
           <div className="w-40">
-            <Input label="Desde" type="date" value={desde} max={hasta} onChange={(e) => setDesde(e.target.value)} />
+            <Input label="Desde" type="date" value={desde} max={hasta} onChange={(e) => (setListo(false), setDesde(e.target.value))} />
           </div>
           <div className="w-40">
-            <Input label="Hasta" type="date" value={hasta} min={desde} onChange={(e) => setHasta(e.target.value)} />
+            <Input label="Hasta" type="date" value={hasta} min={desde} onChange={(e) => (setListo(false), setHasta(e.target.value))} />
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -100,16 +85,87 @@ export function AdminReporte() {
           <Button variante="outline" cargando={descargando === "solicitudes"} onClick={() => descargarCsv("solicitudes")}>
             <Download className="h-4 w-4" /> Solicitudes
           </Button>
-          <Button variante="accent" disabled={!datos} onClick={() => window.print()}>
+          <Button variante="primary" cargando={descargando === "excel"} onClick={descargarExcel}>
+            <FileSpreadsheet className="h-4 w-4" /> Imprimir / Excel
+          </Button>
+          <Button variante="accent" disabled={!listo} onClick={() => window.print()}>
             <Printer className="h-4 w-4" /> Imprimir / PDF
           </Button>
         </div>
       </div>
       <p className="text-xs text-ink-400 print:hidden">
-        Los botones de descarga generan archivos CSV que abren directamente en Excel. Para un PDF, usa “Imprimir / PDF” y
-        elige “Guardar como PDF”.
+        “Imprimir / Excel” descarga un solo archivo con una hoja por tema: resumen, campañas, donaciones, voluntariado,
+        solicitudes y próximas jornadas. Los otros botones bajan cada lista por separado en CSV. Para un PDF, usa
+        “Imprimir / PDF” y elige “Guardar como PDF”.
       </p>
 
+      <InformeGestion desde={desde} hasta={hasta} onListo={() => setListo(true)} />
+    </div>
+  );
+}
+
+// Informe de gestión listo para imprimir o guardar en PDF. `desde`/`hasta` vacíos = desde el inicio / hasta hoy.
+export function InformeGestion({
+  desde,
+  hasta,
+  onListo,
+  onError,
+}: {
+  desde: string;
+  hasta: string;
+  onListo?: () => void;
+  onError?: (mensaje: string) => void;
+}) {
+  const [datos, setDatos] = useState<Datos | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const onListoRef = useRef(onListo);
+  const onErrorRef = useRef(onError);
+  useEffect(() => {
+    onListoRef.current = onListo;
+    onErrorRef.current = onError;
+  }, [onListo, onError]);
+
+  useEffect(() => {
+    if (desde && hasta && desde > hasta) {
+      setError("La fecha inicial no puede ser posterior a la final.");
+      return;
+    }
+    let vigente = true;
+    setError(null);
+    setDatos(null);
+    Promise.all([
+      api.get<Resumen>(`/reportes/resumen${queryRango({ desde, hasta })}`),
+      api.get<Donacion[]>("/donaciones"),
+      api.get<InscripcionVoluntario[]>("/voluntariado"),
+      api.get<SolicitudBeneficiario[]>("/beneficiarios"),
+    ])
+      .then(([resumen, donaciones, inscripciones, solicitudes]) => {
+        if (!vigente) return;
+        setDatos({
+          resumen,
+          donaciones: donaciones.filter((d) => dentroDelRango(d.creadoEn, desde, hasta)),
+          inscripciones: inscripciones.filter((i) => dentroDelRango(i.creadoEn, desde, hasta)),
+          solicitudes: solicitudes.filter((s) => dentroDelRango(s.creadoEn, desde, hasta)),
+        });
+        onListoRef.current?.();
+      })
+      .catch((e) => {
+        if (!vigente) return;
+        const mensaje = e instanceof Error ? e.message : "No se pudo generar el reporte";
+        setError(mensaje);
+        onErrorRef.current?.(mensaje);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [desde, hasta]);
+
+  const periodoTexto = `${desde ? formatoFechaLarga.format(new Date(`${desde}T00:00:00`)) : "Desde el inicio"} – ${formatoFechaLarga.format(
+    hasta ? new Date(`${hasta}T00:00:00`) : new Date(),
+  )}`;
+
+  return (
+    <>
       {error && <p className="text-sm text-clay-600">{error}</p>}
 
       {!datos ? (
@@ -256,7 +312,7 @@ export function AdminReporte() {
           </footer>
         </article>
       )}
-    </div>
+    </>
   );
 }
 

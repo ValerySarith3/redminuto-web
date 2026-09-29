@@ -3,7 +3,7 @@ export function FiltroChips<T extends string>({
   valor,
   onChange,
 }: {
-  opciones: { id: T; label: string; cantidad: number }[];
+  opciones: { id: T; label: string; cantidad?: number }[];
   valor: T;
   onChange: (id: T) => void;
 }) {
@@ -21,11 +21,13 @@ export function FiltroChips<T extends string>({
           }`}
         >
           {o.label}
-          <span
-            className={`rounded-full px-1.5 tabular-nums ${valor === o.id ? "bg-white/20" : "bg-ink-100 text-ink-500"}`}
-          >
-            {o.cantidad}
-          </span>
+          {o.cantidad !== undefined && (
+            <span
+              className={`rounded-full px-1.5 tabular-nums ${valor === o.id ? "bg-white/20" : "bg-ink-100 text-ink-500"}`}
+            >
+              {o.cantidad}
+            </span>
+          )}
         </button>
       ))}
     </div>

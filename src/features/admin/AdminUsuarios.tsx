@@ -1,20 +1,24 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Eye, Phone, Plus, Trash2 } from "lucide-react";
 import { api } from "../../lib/api";
 import { ETIQUETAS_ROL } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 import type { Rol } from "../../types";
 import { Card } from "../../components/ui/Card";
+import { Modal } from "../../components/ui/Modal";
 import { Button } from "../../components/ui/Button";
 import { Badge } from "../../components/ui/Badge";
 import { Input, Select } from "../../components/ui/Field";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { useToast } from "../../components/ui/Toast";
+import { FichaUsuario } from "./FichaUsuario";
 
 interface UsuarioAdmin {
   id: number;
   nombre: string;
   email: string;
+  telefono: string | null;
+  ciudad: string | null;
   rol: Rol;
   creadoEn: string;
   _count: { donaciones: number; inscripciones: number; solicitudes: number };
@@ -48,6 +52,13 @@ export function AdminUsuarios() {
   const [guardando, setGuardando] = useState(false);
   const [actualizandoId, setActualizandoId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fichaId, setFichaId] = useState<number | null>(null);
+  const [busqueda, setBusqueda] = useState("");
+
+  const termino = busqueda.trim().toLowerCase();
+  const visibles = usuarios?.filter(
+    (u) => !termino || [u.nombre, u.email, u.telefono ?? ""].some((campo) => campo.toLowerCase().includes(termino)),
+  );
 
   useEffect(() => {
     cargar();
@@ -56,6 +67,11 @@ export function AdminUsuarios() {
   async function cargar() {
     const lista = await api.get<UsuarioAdmin[]>("/usuarios");
     setUsuarios(lista);
+  }
+
+  function cancelarCreacion() {
+    setCreando(false);
+    setError(null);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -115,8 +131,23 @@ export function AdminUsuarios() {
       </div>
 
       {creando && (
-        <Card className="animate-fade-up">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <Modal
+          titulo="Nuevo usuario"
+          subtitulo="Crea una cuenta y asígnale su rol."
+          onClose={cancelarCreacion}
+          ancho="max-w-lg"
+          pie={
+            <>
+              <Button type="button" variante="ghost" onClick={cancelarCreacion}>
+                Cancelar
+              </Button>
+              <Button type="submit" form="form-usuario" cargando={guardando}>
+                Crear usuario
+              </Button>
+            </>
+          }
+        >
+          <form id="form-usuario" onSubmit={handleSubmit} className="space-y-4">
             <Input
               label="Nombre"
               value={formulario.nombre}
@@ -133,7 +164,7 @@ export function AdminUsuarios() {
             <Input
               label="Contraseña"
               type="password"
-              minLength={6}
+              minLength={8}
               value={formulario.password}
               onChange={(e) => setFormulario((f) => ({ ...f, password: e.target.value }))}
               required
@@ -151,35 +182,33 @@ export function AdminUsuarios() {
               ))}
             </Select>
             {error && <p className="text-sm text-clay-600">{error}</p>}
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                variante="ghost"
-                onClick={() => {
-                  setCreando(false);
-                  setError(null);
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" cargando={guardando}>
-                Crear usuario
-              </Button>
-            </div>
           </form>
-        </Card>
+        </Modal>
       )}
 
-      {!usuarios ? (
+      {usuarios && usuarios.length > 0 && (
+        <input
+          type="search"
+          aria-label="Buscar usuarios"
+          placeholder="Buscar por nombre, correo o celular"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="w-full rounded-xl border border-ink-200 bg-cream-50 px-3.5 py-2.5 text-sm text-ink-800 placeholder:text-ink-400 focus:border-royal-500 focus:outline-none focus:ring-2 focus:ring-royal-500/25 sm:max-w-sm"
+        />
+      )}
+
+      {!usuarios || !visibles ? (
         <div className="space-y-3">
           <Skeleton className="h-20" />
           <Skeleton className="h-20" />
         </div>
       ) : usuarios.length === 0 ? (
         <Card className="text-center text-ink-500">Aún no hay usuarios registrados.</Card>
+      ) : visibles.length === 0 ? (
+        <Card className="text-center text-ink-500">Nadie coincide con “{busqueda}”.</Card>
       ) : (
         <div className="space-y-3">
-          {usuarios.map((usuario) => {
+          {visibles.map((usuario) => {
             const esUnoMismo = usuario.id === yo?.id;
             return (
               <Card key={usuario.id} className="flex flex-wrap items-center justify-between gap-4">
@@ -189,10 +218,20 @@ export function AdminUsuarios() {
                     <Badge tono={usuario.rol === "ADMIN" ? "success" : "neutral"}>{ETIQUETAS_ROL[usuario.rol]}</Badge>
                     {esUnoMismo && <span className="text-xs text-ink-400">(tú)</span>}
                   </div>
-                  <p className="mt-1 text-sm text-ink-500">{usuario.email}</p>
+                  <p className="mt-1 flex flex-wrap items-center gap-x-3 text-sm text-ink-500">
+                    {usuario.email}
+                    {usuario.telefono && (
+                      <span className="inline-flex items-center gap-1">
+                        <Phone className="h-3.5 w-3.5" /> {usuario.telefono}
+                      </span>
+                    )}
+                  </p>
                   <p className="mt-1 text-xs text-ink-400">{actividad(usuario)}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
+                  <Button variante="outline" className="!px-3" onClick={() => setFichaId(usuario.id)}>
+                    <Eye className="h-4 w-4" /> Ver ficha
+                  </Button>
                   <select
                     aria-label="Rol"
                     value={usuario.rol}
@@ -220,6 +259,8 @@ export function AdminUsuarios() {
           })}
         </div>
       )}
+
+      {fichaId !== null && <FichaUsuario usuarioId={fichaId} onClose={() => setFichaId(null)} />}
     </div>
   );
 }

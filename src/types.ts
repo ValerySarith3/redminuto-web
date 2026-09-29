@@ -5,6 +5,10 @@ export interface Usuario {
   nombre: string;
   email: string;
   rol: Rol;
+  telefono?: string | null;
+  tipoDocumento?: TipoDocumento | null;
+  numeroDocumento?: string | null;
+  ciudad?: string | null;
   creadoEn: string;
 }
 
@@ -143,6 +147,7 @@ export interface AvanceCampana {
 export interface AvanceProgramaVoluntarios {
   programaId: number;
   nombre: string;
+  jornadas?: number;
   cupo: number;
   inscritos: number;
   faltan: number;
