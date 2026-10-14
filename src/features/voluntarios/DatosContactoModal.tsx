@@ -1,11 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { api } from "../../lib/api";
-import { ETIQUETAS_TIPO_DOCUMENTO, type TipoDocumento, type Usuario } from "../../types";
+import type { Usuario } from "../../types";
+import { LISTA_TIPO_DOCUMENTO, useOpciones } from "../../lib/listas";
 import { Modal } from "../../components/ui/Modal";
 import { Button } from "../../components/ui/Button";
 import { Input, Select } from "../../components/ui/Field";
-
-const tiposDocumento = Object.keys(ETIQUETAS_TIPO_DOCUMENTO) as TipoDocumento[];
 
 // Se pide una sola vez, antes de la primera inscripción, para que el equipo pueda contactar al voluntario.
 export function DatosContactoModal({
@@ -18,7 +17,9 @@ export function DatosContactoModal({
   onClose: () => void;
 }) {
   const [telefono, setTelefono] = useState(perfil?.telefono ?? "");
-  const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento>(perfil?.tipoDocumento ?? "CC");
+  const tiposDocumento = useOpciones(LISTA_TIPO_DOCUMENTO);
+  const [tipoDocumentoElegido, setTipoDocumento] = useState(perfil?.tipoDocumentoId ? String(perfil.tipoDocumentoId) : "");
+  const tipoDocumentoId = tipoDocumentoElegido || (tiposDocumento?.[0] ? String(tiposDocumento[0].id) : "");
   const [numeroDocumento, setNumeroDocumento] = useState(perfil?.numeroDocumento ?? "");
   const [ciudad, setCiudad] = useState(perfil?.ciudad ?? "");
   const [guardando, setGuardando] = useState(false);
@@ -31,7 +32,7 @@ export function DatosContactoModal({
     try {
       const actualizado = await api.put<Usuario>("/usuarios/yo/contacto", {
         telefono,
-        tipoDocumento,
+        tipoDocumentoId,
         numeroDocumento,
         ciudad,
       });
@@ -62,12 +63,12 @@ export function DatosContactoModal({
         <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
           <Select
             label="Documento"
-            value={tipoDocumento}
-            onChange={(e) => setTipoDocumento(e.target.value as TipoDocumento)}
+            value={tipoDocumentoId}
+            onChange={(e) => setTipoDocumento(e.target.value)}
           >
-            {tiposDocumento.map((t) => (
-              <option key={t} value={t}>
-                {t === "OTRO" ? "Otro" : t}
+            {tiposDocumento?.map((t) => (
+              <option key={t.id} value={t.id} title={t.nombre}>
+                {t.codigo === "OTRO" ? "Otro" : t.codigo}
               </option>
             ))}
           </Select>

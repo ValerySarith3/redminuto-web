@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
+import { NovedadesCampana } from "./NovedadesCampana";
 import { api } from "../../lib/api";
 import type { Campana, Programa } from "../../types";
 import { Card } from "../../components/ui/Card";
@@ -32,6 +33,7 @@ export function AdminCampanas() {
     programaId: "",
   });
   const [guardando, setGuardando] = useState(false);
+  const [novedadesDe, setNovedadesDe] = useState<Campana | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -197,6 +199,9 @@ export function AdminCampanas() {
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">
+                <Button variante="outline" className="!px-3" onClick={() => setNovedadesDe(campana)}>
+                  <Megaphone className="h-4 w-4" /> Novedades
+                </Button>
                 <Button variante="outline" className="!px-3" onClick={() => abrirEdicion(campana)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -208,6 +213,8 @@ export function AdminCampanas() {
           ))}
         </div>
       )}
+
+      {novedadesDe && <NovedadesCampana campana={novedadesDe} onClose={() => setNovedadesDe(null)} />}
     </div>
   );
 }

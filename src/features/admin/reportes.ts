@@ -138,6 +138,7 @@ export type Seccion =
   | "solicitudes"
   | "programas"
   | "campanas"
-  | "usuarios";
+  | "usuarios"
+  | "listas";
 
 export type IrA = (seccion: Seccion, filtro?: string) => void;

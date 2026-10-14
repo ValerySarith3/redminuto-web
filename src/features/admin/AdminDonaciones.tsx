@@ -8,7 +8,8 @@ import { Skeleton } from "../../components/ui/Skeleton";
 import { useToast } from "../../components/ui/Toast";
 import { FiltroChips } from "./FiltroChips";
 import { FichaUsuario } from "./FichaUsuario";
-import { Eye } from "lucide-react";
+import { Eye, Landmark } from "lucide-react";
+import { EditarDatosPago } from "./EditarDatosPago";
 
 type Filtro = "TODAS" | EstadoDonacion;
 
@@ -24,6 +25,7 @@ export function AdminDonaciones({ filtroInicial }: { filtroInicial?: string }) {
   );
   const [actualizando, setActualizando] = useState<number | null>(null);
   const [fichaId, setFichaId] = useState<number | null>(null);
+  const [editandoDatosPago, setEditandoDatosPago] = useState(false);
 
   useEffect(() => {
     api.get<Donacion[]>("/donaciones").then(setDonaciones);
@@ -74,12 +76,17 @@ export function AdminDonaciones({ filtroInicial }: { filtroInicial?: string }) {
           las confirmas.
         </p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <Button variante="outline" onClick={() => setEditandoDatosPago(true)}>
+          <Landmark className="h-4 w-4" /> Datos de pago
+        </Button>
         <Button variante="outline" cargando={descargando} onClick={descargarCsv}>
           <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
           </svg>
           Exportar (CSV)
         </Button>
+        </div>
       </div>
 
       <FiltroChips
@@ -158,6 +165,7 @@ export function AdminDonaciones({ filtroInicial }: { filtroInicial?: string }) {
       )}
 
       {fichaId !== null && <FichaUsuario usuarioId={fichaId} seccion="donaciones" onClose={() => setFichaId(null)} />}
+      {editandoDatosPago && <EditarDatosPago onClose={() => setEditandoDatosPago(false)} />}
     </div>
   );
 }

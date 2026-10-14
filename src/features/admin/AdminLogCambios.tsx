@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, RotateCcw, Search, ShieldAlert } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RotateCcw, Search } from "lucide-react";
 import { api } from "../../lib/api";
 import { Button } from "../../components/ui/Button";
 import { Select } from "../../components/ui/Field";
@@ -12,7 +12,6 @@ interface Evento {
   fecha: string;
   modulo: string;
   accion: string;
-  exitoso: boolean;
   descripcion: string;
   afectado: { tipo: string; nombre: string } | null;
   informacionAnterior: Record<string, string> | null;
@@ -30,19 +29,18 @@ interface Pagina {
 }
 
 const MODULOS: Record<string, string> = {
-  CUENTAS: "Cuentas y acceso",
+  CUENTAS: "Cuentas",
   USUARIOS: "Gestión de usuarios",
   DONACIONES: "Donaciones",
   VOLUNTARIADO: "Voluntariado",
   SOLICITUDES: "Solicitudes de ayuda",
   PROGRAMAS: "Programas",
   CAMPANAS: "Campañas",
+  LISTAS: "Listas maestras",
   ACTIVIDADES: "Actividades",
 };
 
 const ACCIONES: Record<string, string> = {
-  INICIO_SESION: "Inicio de sesión",
-  REGISTRO: "Registro de cuenta",
   CREAR: "Creación",
   EDITAR: "Edición",
   ELIMINAR: "Eliminación",
@@ -53,22 +51,22 @@ const ACCIONES: Record<string, string> = {
 };
 
 function tonoAccion(e: Evento) {
-  if (!e.exitoso || e.accion === "ELIMINAR") return "bg-clay-100 text-clay-600 ring-clay-500/20";
+  if (e.accion === "ELIMINAR") return "bg-clay-100 text-clay-600 ring-clay-500/20";
   if (e.accion === "CAMBIO_ROL" || e.accion === "CAMBIO_CONTRASENA") return "bg-gold-100 text-gold-800 ring-gold-500/30";
-  if (e.accion === "CREAR" || e.accion === "REGISTRO") return "bg-royal-50 text-royal-700 ring-royal-500/20";
+  if (e.accion === "CREAR") return "bg-royal-50 text-royal-700 ring-royal-500/20";
   return "bg-ink-100 text-ink-600 ring-ink-300/40";
 }
 
 const formatoFecha = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Bogota" });
 const formatoHora = new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "America/Bogota" });
 
-const filtrosVacios = { q: "", modulo: "", accion: "", resultado: "", desde: "", hasta: "" };
+const filtrosVacios = { q: "", modulo: "", accion: "", desde: "", hasta: "" };
 type Filtros = typeof filtrosVacios;
 
 function queryFiltros(f: Filtros) {
   const base = queryRango({ desde: f.desde || undefined, hasta: f.hasta || undefined });
   const params = new URLSearchParams(base.slice(1));
-  for (const clave of ["q", "modulo", "accion", "resultado"] as const) {
+  for (const clave of ["q", "modulo", "accion"] as const) {
     if (f[clave].trim()) params.set(clave, f[clave].trim());
   }
   return params;
@@ -251,9 +249,7 @@ export function AdminLogCambios() {
                         <span
                           className={`inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold ring-1 ring-inset ${tonoAccion(e)}`}
                         >
-                          {!e.exitoso && <ShieldAlert className="h-3.5 w-3.5" />}
                           {ACCIONES[e.accion] ?? e.accion}
-                          {!e.exitoso && " fallido"}
                         </span>
                       </td>
                       <td className="px-3 py-3">

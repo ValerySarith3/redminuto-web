@@ -6,6 +6,7 @@ import {
   HandHeart,
   LayoutDashboard,
   LifeBuoy,
+  ListChecks,
   PanelLeftClose,
   PanelLeftOpen,
   Megaphone,
@@ -22,6 +23,7 @@ import { AdminCampanas } from "./AdminCampanas";
 import { AdminDonaciones } from "./AdminDonaciones";
 import { AdminVoluntariado } from "./AdminVoluntariado";
 import { AdminSolicitudes } from "./AdminSolicitudes";
+import { AdminListas } from "./AdminListas";
 import type { IrA, Pendientes, Seccion } from "./reportes";
 
 interface ItemMenu {
@@ -57,6 +59,7 @@ const grupos: { titulo: string; items: ItemMenu[] }[] = [
     titulo: "Administración",
     items: [
       { id: "usuarios", label: "Usuarios", icono: UserCog },
+      { id: "listas", label: "Listas maestras", icono: ListChecks },
       { id: "log-cambios", label: "Log de cambios", icono: ScrollText },
     ],
   },
@@ -198,6 +201,7 @@ export function AdminPage() {
           {seccion === "programas" && <AdminProgramas />}
           {seccion === "campanas" && <AdminCampanas />}
           {seccion === "usuarios" && <AdminUsuarios />}
+          {seccion === "listas" && <AdminListas />}
         </main>
       </div>
     </div>

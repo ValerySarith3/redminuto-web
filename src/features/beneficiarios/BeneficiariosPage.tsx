@@ -2,12 +2,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
+import { LISTA_TIPO_DOCUMENTO, useOpciones } from "../../lib/listas";
 import {
   ETIQUETAS_TIPO_APOYO,
-  ETIQUETAS_TIPO_DOCUMENTO,
   type Programa,
   type TipoApoyo,
-  type TipoDocumento,
 } from "../../types";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
@@ -17,7 +16,7 @@ import { useToast } from "../../components/ui/Toast";
 
 interface FormularioSolicitud {
   nombreCompleto: string;
-  tipoDocumento: TipoDocumento;
+  tipoDocumentoId: string;
   numeroDocumento: string;
   telefono: string;
   direccion: string;
@@ -30,7 +29,7 @@ interface FormularioSolicitud {
 
 const formularioVacio: FormularioSolicitud = {
   nombreCompleto: "",
-  tipoDocumento: "CC",
+  tipoDocumentoId: "",
   numeroDocumento: "",
   telefono: "",
   direccion: "",
@@ -47,6 +46,10 @@ export function BeneficiariosPage() {
   const [programas, setProgramas] = useState<Programa[]>([]);
   const [programaId, setProgramaId] = useState<number | "">("");
   const [form, setForm] = useState<FormularioSolicitud>(formularioVacio);
+  const tiposDocumento = useOpciones(LISTA_TIPO_DOCUMENTO);
+  // Por defecto, la primera opción de la lista (cédula de ciudadanía).
+  const tipoDocumentoPorDefecto = tiposDocumento?.[0] ? String(tiposDocumento[0].id) : "";
+  const tipoDocumentoId = form.tipoDocumentoId || tipoDocumentoPorDefecto;
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +82,7 @@ export function BeneficiariosPage() {
     setError(null);
     setEnviando(true);
     try {
-      await api.post("/beneficiarios", { ...form, programaId });
+      await api.post("/beneficiarios", { ...form, tipoDocumentoId, programaId });
       setEnviado(true);
       setForm({ ...formularioVacio, nombreCompleto: usuario.nombre });
       toast.exito("Solicitud enviada", "Un administrador la revisará pronto.");
@@ -131,13 +134,13 @@ export function BeneficiariosPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <Select
                     label="Tipo de documento"
-                    value={form.tipoDocumento}
-                    onChange={(e) => actualizar("tipoDocumento", e.target.value as TipoDocumento)}
+                    value={tipoDocumentoId}
+                    onChange={(e) => actualizar("tipoDocumentoId", e.target.value)}
                     required
                   >
-                    {Object.entries(ETIQUETAS_TIPO_DOCUMENTO).map(([valor, etiqueta]) => (
-                      <option key={valor} value={valor}>
-                        {etiqueta}
+                    {tiposDocumento?.map((tipo) => (
+                      <option key={tipo.id} value={tipo.id}>
+                        {tipo.nombre}
                       </option>
                     ))}
                   </Select>

@@ -1,10 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { CheckCircle2, ShieldCheck, X } from "lucide-react";
 import { api } from "../lib/api";
-import type { Campana, CanalDonacion, Donacion } from "../types";
+import type { Campana, CanalDonacion, DatosPago, Donacion } from "../types";
 import { Button } from "./ui/Button";
 import { Select } from "./ui/Field";
 import { useToast } from "./ui/Toast";
+import { DatosPagoCanal } from "./DatosPagoCanal";
 
 const montosSugeridos = [20000, 50000, 100000, 200000];
 const MONTO_MIN = 5000;
@@ -47,10 +48,12 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
   const [comprobante, setComprobante] = useState<string | null>(null);
   const [referencia] = useState(() => crypto.randomUUID());
   const [configPagos, setConfigPagos] = useState<ConfigPagos | null>(null);
+  const [datosPago, setDatosPago] = useState<DatosPago | null>(null);
   const toast = useToast();
 
   useEffect(() => {
     api.get<ConfigPagos>("/pagos/config").then(setConfigPagos).catch(() => setConfigPagos(null));
+    api.get<DatosPago | null>("/pagos/datos").then(setDatosPago).catch(() => setDatosPago(null));
   }, []);
 
   const conPasarela = canal === "PASARELA" && configPagos?.pasarela === "payu";
@@ -105,7 +108,7 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md animate-pop rounded-2xl border border-ink-200 bg-cream-50 p-6 shadow-2xl shadow-royal-900/20"
+        className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md animate-pop overflow-y-auto rounded-2xl border border-ink-200 bg-cream-50 p-6 shadow-2xl shadow-royal-900/20"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -129,7 +132,12 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
                 ? "Puedes ver su avance en tu panel de seguimiento."
                 : "Quedará pendiente hasta que Casa Minuto de Dios confirme el pago; verás el cambio en tu panel de seguimiento."}
             </p>
-            {comprobante && (
+            {canal !== "PASARELA" && datosPago && (
+              <div className="mt-4">
+                <DatosPagoCanal canal={canal} datos={datosPago} comprobante={comprobante} />
+              </div>
+            )}
+            {comprobante && (canal === "PASARELA" || !datosPago) && (
               <p className="mt-3 inline-block rounded-full bg-ink-100 px-3 py-1 text-xs font-semibold tracking-wide text-ink-600">
                 Comprobante N.º {comprobante}
               </p>
@@ -205,6 +213,12 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
                 <option value="EFECTIVO">Efectivo</option>
               </Select>
             </div>
+
+            {canal !== "PASARELA" && datosPago && (
+              <div className="mt-4">
+                <DatosPagoCanal canal={canal} datos={datosPago} />
+              </div>
+            )}
 
             {error && <p className="mt-3 text-sm text-clay-600">{error}</p>}
 

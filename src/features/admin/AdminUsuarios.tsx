@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Eye, Phone, Plus, Trash2 } from "lucide-react";
+import { Eye, Pencil, Phone, Plus, Trash2 } from "lucide-react";
 import { api } from "../../lib/api";
 import { ETIQUETAS_ROL } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 import type { Rol } from "../../types";
+import type { OpcionLista } from "../../lib/listas";
 import { Card } from "../../components/ui/Card";
 import { Modal } from "../../components/ui/Modal";
 import { Button } from "../../components/ui/Button";
@@ -12,12 +13,16 @@ import { Input, Select } from "../../components/ui/Field";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { useToast } from "../../components/ui/Toast";
 import { FichaUsuario } from "./FichaUsuario";
+import { EditarUsuario } from "./EditarUsuario";
 
 interface UsuarioAdmin {
   id: number;
   nombre: string;
   email: string;
   telefono: string | null;
+  tipoDocumentoId: number | null;
+  tipoDocumento: OpcionLista | null;
+  numeroDocumento: string | null;
   ciudad: string | null;
   rol: Rol;
   creadoEn: string;
@@ -50,9 +55,9 @@ export function AdminUsuarios() {
   const [creando, setCreando] = useState(false);
   const [formulario, setFormulario] = useState<FormularioUsuario>(formularioVacio);
   const [guardando, setGuardando] = useState(false);
-  const [actualizandoId, setActualizandoId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fichaId, setFichaId] = useState<number | null>(null);
+  const [editando, setEditando] = useState<UsuarioAdmin | null>(null);
   const [busqueda, setBusqueda] = useState("");
 
   const termino = busqueda.trim().toLowerCase();
@@ -90,20 +95,6 @@ export function AdminUsuarios() {
       toast.fallo("No se pudo crear el usuario", mensaje);
     } finally {
       setGuardando(false);
-    }
-  }
-
-  async function cambiarRol(usuario: UsuarioAdmin, rol: Rol) {
-    setActualizandoId(usuario.id);
-    try {
-      await api.put(`/usuarios/${usuario.id}/rol`, { rol });
-      setUsuarios((actual) => actual?.map((u) => (u.id === usuario.id ? { ...u, rol } : u)) ?? actual);
-      toast.exito("Rol actualizado");
-    } catch (e) {
-      const mensaje = e instanceof Error ? e.message : "No se pudo actualizar el rol";
-      toast.fallo("No se pudo actualizar el rol", mensaje);
-    } finally {
-      setActualizandoId(null);
     }
   }
 
@@ -232,19 +223,9 @@ export function AdminUsuarios() {
                   <Button variante="outline" className="!px-3" onClick={() => setFichaId(usuario.id)}>
                     <Eye className="h-4 w-4" /> Ver ficha
                   </Button>
-                  <select
-                    aria-label="Rol"
-                    value={usuario.rol}
-                    disabled={esUnoMismo || actualizandoId === usuario.id}
-                    onChange={(e) => cambiarRol(usuario, e.target.value as Rol)}
-                    className="w-40 rounded-xl border border-ink-200 bg-cream-50 px-3 py-2 text-sm text-ink-800 transition-colors focus:border-royal-500 focus:outline-none focus:ring-2 focus:ring-royal-500/25 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {roles.map((rol) => (
-                      <option key={rol} value={rol}>
-                        {ETIQUETAS_ROL[rol]}
-                      </option>
-                    ))}
-                  </select>
+                  <Button variante="outline" className="!px-3" aria-label="Editar usuario" onClick={() => setEditando(usuario)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                   <Button
                     variante="danger"
                     className="!px-3"
@@ -261,6 +242,18 @@ export function AdminUsuarios() {
       )}
 
       {fichaId !== null && <FichaUsuario usuarioId={fichaId} onClose={() => setFichaId(null)} />}
+
+      {editando && (
+        <EditarUsuario
+          usuario={editando}
+          esUnoMismo={editando.id === yo?.id}
+          onClose={() => setEditando(null)}
+          onGuardado={(actualizado) => {
+            setUsuarios((actual) => actual?.map((u) => (u.id === actualizado.id ? actualizado : u)) ?? actual);
+            setEditando(null);
+          }}
+        />
+      )}
     </div>
   );
 }

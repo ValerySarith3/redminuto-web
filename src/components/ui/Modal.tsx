@@ -1,7 +1,10 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 // Ventana emergente: encabezado y pie fijos, y el contenido se desplaza por dentro si no cabe en la pantalla.
+// Se monta en <body> con un portal: si quedara dentro de un contenedor animado con `transform` (como el
+// <main> del panel), el `position: fixed` se mediría contra ese contenedor y la ventana saldría recortada.
 export function Modal({
   titulo,
   subtitulo,
@@ -35,7 +38,7 @@ export function Modal({
     };
   }, []);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-royal-950/50 p-3 backdrop-blur-sm animate-fade-in sm:p-6"
       onClick={onClose}
@@ -63,6 +66,7 @@ export function Modal({
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 [scrollbar-width:thin]">{children}</div>
         {pie && <footer className="flex shrink-0 justify-end gap-3 border-t border-ink-100 bg-cream-100/60 px-6 py-3">{pie}</footer>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

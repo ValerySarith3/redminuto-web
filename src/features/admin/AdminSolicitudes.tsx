@@ -3,7 +3,6 @@ import { api } from "../../lib/api";
 import {
   ETIQUETAS_ESTADO,
   ETIQUETAS_TIPO_APOYO,
-  ETIQUETAS_TIPO_DOCUMENTO,
   type EstadoSolicitud,
   type SolicitudBeneficiario,
 } from "../../types";
@@ -119,7 +118,7 @@ export function AdminSolicitudes({ filtroInicial }: { filtroInicial?: string }) 
                   <Badge>{solicitud.estado}</Badge>
                 </div>
                 <p className="mt-1 text-sm text-ink-500">
-                  {ETIQUETAS_TIPO_DOCUMENTO[solicitud.tipoDocumento]} {solicitud.numeroDocumento} · {solicitud.telefono}
+                  {solicitud.tipoDocumento.nombre} {solicitud.numeroDocumento} · {solicitud.telefono}
                 </p>
                 <p className="mt-1 text-sm text-ink-500">
                   {solicitud.direccion}, {solicitud.ciudad} · {solicitud.personasACargo}{" "}

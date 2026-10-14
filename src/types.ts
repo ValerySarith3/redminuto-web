@@ -1,3 +1,5 @@
+import type { OpcionLista } from "./lib/listas";
+
 export type Rol = "USUARIO" | "ADMIN";
 
 export interface Usuario {
@@ -6,7 +8,8 @@ export interface Usuario {
   email: string;
   rol: Rol;
   telefono?: string | null;
-  tipoDocumento?: TipoDocumento | null;
+  tipoDocumentoId?: number | null;
+  tipoDocumento?: OpcionLista | null;
   numeroDocumento?: string | null;
   ciudad?: string | null;
   creadoEn: string;
@@ -105,21 +108,11 @@ export const ETIQUETAS_TIPO_APOYO: Record<TipoApoyo, string> = {
   OTRO: "Otro",
 };
 
-export type TipoDocumento = "CC" | "TI" | "CE" | "PPT" | "RC" | "OTRO";
-
-export const ETIQUETAS_TIPO_DOCUMENTO: Record<TipoDocumento, string> = {
-  CC: "Cédula de ciudadanía",
-  TI: "Tarjeta de identidad",
-  CE: "Cédula de extranjería",
-  PPT: "Permiso por Protección Temporal",
-  RC: "Registro civil",
-  OTRO: "Otro",
-};
-
 export interface SolicitudBeneficiario {
   id: number;
   nombreCompleto: string;
-  tipoDocumento: TipoDocumento;
+  tipoDocumentoId: number;
+  tipoDocumento: OpcionLista;
   numeroDocumento: string;
   telefono: string;
   direccion: string;
@@ -184,4 +177,15 @@ export function formatoFechaActividad(fecha: string) {
     year: "numeric",
     timeZone: "UTC",
   });
+}
+
+export interface DatosPago {
+  banco: string;
+  tipoCuenta: string;
+  numeroCuenta: string;
+  titular: string;
+  nit: string;
+  llave: string;
+  direccionEfectivo: string;
+  horarioEfectivo: string;
 }

@@ -5,7 +5,6 @@ import {
   ETIQUETAS_CANAL,
   ETIQUETAS_ROL,
   ETIQUETAS_TIPO_APOYO,
-  ETIQUETAS_TIPO_DOCUMENTO,
   formatoFechaActividad,
   type CanalDonacion,
   type EstadoDonacion,
@@ -13,7 +12,6 @@ import {
   type EstadoSolicitud,
   type Rol,
   type TipoApoyo,
-  type TipoDocumento,
 } from "../../types";
 import { Modal } from "../../components/ui/Modal";
 import { Badge } from "../../components/ui/Badge";
@@ -21,6 +19,7 @@ import { Button } from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { useToast } from "../../components/ui/Toast";
 import { pesos } from "./graficos";
+import type { OpcionLista } from "../../lib/listas";
 
 interface DetalleUsuario {
   id: number;
@@ -28,7 +27,7 @@ interface DetalleUsuario {
   email: string;
   rol: Rol;
   telefono: string | null;
-  tipoDocumento: TipoDocumento | null;
+  tipoDocumento: OpcionLista | null;
   numeroDocumento: string | null;
   ciudad: string | null;
   creadoEn: string;
@@ -52,7 +51,7 @@ interface DetalleUsuario {
     estado: EstadoSolicitud;
     tipoApoyo: TipoApoyo;
     nombreCompleto: string;
-    tipoDocumento: TipoDocumento;
+    tipoDocumento: OpcionLista;
     numeroDocumento: string;
     telefono: string;
     direccion: string;
@@ -100,9 +99,9 @@ export function FichaUsuario({
   const ultimaSolicitud = detalle?.solicitudes[0];
   const telefono = detalle?.telefono ?? ultimaSolicitud?.telefono;
   const documento = detalle?.numeroDocumento
-    ? `${detalle.tipoDocumento ? ETIQUETAS_TIPO_DOCUMENTO[detalle.tipoDocumento] : ""} ${detalle.numeroDocumento}`
+    ? `${detalle.tipoDocumento?.nombre ?? ""} ${detalle.numeroDocumento}`.trim()
     : ultimaSolicitud
-      ? `${ETIQUETAS_TIPO_DOCUMENTO[ultimaSolicitud.tipoDocumento]} ${ultimaSolicitud.numeroDocumento}`
+      ? `${ultimaSolicitud.tipoDocumento.nombre} ${ultimaSolicitud.numeroDocumento}`
       : null;
   const ubicacion = ultimaSolicitud ? `${ultimaSolicitud.direccion}, ${ultimaSolicitud.ciudad}` : detalle?.ciudad;
 
@@ -226,7 +225,7 @@ export function FichaUsuario({
                           {s.programa.nombre} · {ETIQUETAS_TIPO_APOYO[s.tipoApoyo]}
                         </p>
                         <p className="text-xs text-ink-500">
-                          {s.nombreCompleto} · {ETIQUETAS_TIPO_DOCUMENTO[s.tipoDocumento]} {s.numeroDocumento} · Tel. {s.telefono}
+                          {s.nombreCompleto} · {s.tipoDocumento.nombre} {s.numeroDocumento} · Tel. {s.telefono}
                         </p>
                         <p className="text-xs text-ink-400">
                           {s.direccion}, {s.ciudad} · {s.personasACargo}{" "}
