@@ -7,7 +7,7 @@ import vercel from './vercel.json' with { type: 'json' }
 // (la API local está en localhost:4000 y no hay HTTPS, así que se ajustan esas dos partes).
 const cabecerasPreview = Object.fromEntries(
   vercel.headers[0].headers
-    .filter((h) => h.key !== 'Strict-Transport-Security')
+    .filter((h) => h.key !== 'Strict-Transport-Security' && h.key !== 'Access-Control-Allow-Origin')
     .map((h) => [
       h.key,
       h.key === 'Content-Security-Policy'

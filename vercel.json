@@ -9,6 +9,7 @@
           "value": "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' https://redminuto-api.onrender.com; form-action 'self' https://checkout.payulatam.com https://sandbox.checkout.payulatam.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
         },
         { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Access-Control-Allow-Origin", "value": "https://redminuto-web.vercel.app" },
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
