@@ -114,7 +114,9 @@ export function DashboardPage() {
 
   const sinActividad =
     resumen.donaciones.length === 0 && resumen.inscripciones.length === 0 && resumen.solicitudes.length === 0;
-  const totalDonado = resumen.donaciones.reduce((sum, d) => sum + d.monto, 0);
+  const totalDonado = resumen.donaciones
+    .filter((d) => d.estado === "COMPLETADA")
+    .reduce((sum, d) => sum + d.monto, 0);
   const certificadosListos = resumen.inscripciones.filter((i) => i.certificadoDisponible).length;
   const solicitudesAbiertas = resumen.solicitudes.filter((s) => s.estado === "PENDIENTE" || s.estado === "EN_REVISION").length;
   const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
