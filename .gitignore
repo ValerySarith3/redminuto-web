@@ -24,3 +24,7 @@ dist-ssr
 .env
 .vercel
 .env*
+
+# Capturas generadas por las pruebas de Selenium
+pruebas/selenium/capturas/
+.scannerwork/

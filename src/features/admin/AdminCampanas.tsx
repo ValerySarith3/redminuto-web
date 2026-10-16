@@ -37,7 +37,7 @@ export function AdminCampanas() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    cargar();
+    void cargar();
   }, []);
 
   async function cargar() {

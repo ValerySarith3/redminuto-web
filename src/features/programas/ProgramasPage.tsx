@@ -26,7 +26,7 @@ export function ProgramasPage() {
   const [campanaParaDonar, setCampanaParaDonar] = useState<Campana | null>(null);
 
   useEffect(() => {
-    cargar();
+    void cargar();
   }, []);
 
   async function cargar() {

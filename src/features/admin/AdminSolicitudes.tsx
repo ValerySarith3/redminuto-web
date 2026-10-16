@@ -43,7 +43,7 @@ export function AdminSolicitudes({ filtroInicial }: { filtroInicial?: string }) 
   const conteo = (f: Filtro) => solicitudes?.filter((s) => coincide(s.estado, f)).length ?? 0;
 
   useEffect(() => {
-    cargar();
+    void cargar();
   }, []);
 
   async function cargar() {

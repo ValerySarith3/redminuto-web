@@ -28,8 +28,8 @@ export function AdminProgramas() {
   const [abiertos, setAbiertos] = useState<number[]>([]);
 
   useEffect(() => {
-    cargar();
-    cargarJornadas();
+    void cargar();
+    void cargarJornadas();
   }, []);
 
   async function cargar() {

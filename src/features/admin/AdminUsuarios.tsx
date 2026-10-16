@@ -66,7 +66,7 @@ export function AdminUsuarios() {
   );
 
   useEffect(() => {
-    cargar();
+    void cargar();
   }, []);
 
   async function cargar() {

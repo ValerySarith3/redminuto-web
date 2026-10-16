@@ -37,7 +37,7 @@ export function VoluntariosPage() {
   const [pendiente, setPendiente] = useState<{ destino: Destino; nombre: string; perfil: Usuario | null } | null>(null);
 
   useEffect(() => {
-    cargar();
+    void cargar();
   }, [usuario]);
 
   async function cargar() {
@@ -204,7 +204,7 @@ export function VoluntariosPage() {
           onClose={() => setPendiente(null)}
           onGuardado={() => {
             setPendiente(null);
-            confirmarInscripcion(pendiente.destino, pendiente.nombre);
+            void confirmarInscripcion(pendiente.destino, pendiente.nombre);
           }}
         />
       )}

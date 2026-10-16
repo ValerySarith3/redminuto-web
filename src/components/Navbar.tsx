@@ -47,7 +47,7 @@ export function Navbar() {
   const inicio = esAdmin ? "/admin" : "/";
 
   function ir(ruta: string) {
-    navigate(ruta);
+    void navigate(ruta);
     setMenuAbierto(false);
   }
 

@@ -29,7 +29,7 @@ export function AdminVoluntariado({ filtroInicial }: { filtroInicial?: string })
   const conteo = (f: Filtro) => inscripciones?.filter((i) => f === "TODAS" || i.estado === f).length ?? 0;
 
   useEffect(() => {
-    cargar();
+    void cargar();
   }, []);
 
   async function cargar() {

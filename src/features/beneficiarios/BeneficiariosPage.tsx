@@ -55,7 +55,7 @@ export function BeneficiariosPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get<Programa[]>("/programas").then((lista) => {
+    void api.get<Programa[]>("/programas").then((lista) => {
       setProgramas(lista);
       if (lista.length > 0) setProgramaId(lista[0].id);
     });

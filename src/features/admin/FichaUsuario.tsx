@@ -339,7 +339,6 @@ function CambiarPassword({ usuarioId, nombre, onCerrar }: { usuarioId: number; n
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          autoFocus
           className="min-w-0 flex-1 rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-800 placeholder:text-ink-400 focus:border-royal-500 focus:outline-none focus:ring-2 focus:ring-royal-500/25"
         />
         <div className="flex shrink-0 gap-2">

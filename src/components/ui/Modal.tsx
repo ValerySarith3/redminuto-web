@@ -41,13 +41,15 @@ export function Modal({
   return createPortal(
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-royal-950/50 p-3 backdrop-blur-sm animate-fade-in sm:p-6"
-      onClick={onClose}
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         role="dialog"
         aria-modal="true"
         className={`relative flex max-h-[calc(100dvh-1.5rem)] w-full ${ancho} animate-pop flex-col overflow-hidden rounded-2xl border border-ink-200 bg-cream-50 shadow-2xl shadow-royal-900/20 sm:max-h-[calc(100dvh-3rem)]`}
-        onClick={(e) => e.stopPropagation()}
       >
         <header className="flex shrink-0 items-start gap-3 border-b border-ink-100 px-6 py-4">
           <div className="min-w-0 flex-1">

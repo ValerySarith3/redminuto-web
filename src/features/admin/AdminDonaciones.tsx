@@ -28,7 +28,7 @@ export function AdminDonaciones({ filtroInicial }: { filtroInicial?: string }) {
   const [editandoDatosPago, setEditandoDatosPago] = useState(false);
 
   useEffect(() => {
-    api.get<Donacion[]>("/donaciones").then(setDonaciones);
+    void api.get<Donacion[]>("/donaciones").then(setDonaciones);
   }, []);
 
   const visibles = useMemo(

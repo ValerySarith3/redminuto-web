@@ -55,7 +55,7 @@ export function AuthPage() {
         usuarioSesion = await registrarse({ nombre, email, password, aceptaTratamientoDatos: aceptaDatos });
         toast.exito("¡Cuenta creada!", "Ya puedes donar, inscribirte como voluntario o solicitar ayuda.");
       }
-      navigate(usuarioSesion.rol === "ADMIN" ? "/admin" : "/");
+      void navigate(usuarioSesion.rol === "ADMIN" ? "/admin" : "/");
     } catch (e) {
       const mensaje = e instanceof Error ? e.message : "Ocurrió un error";
       setError(mensaje);

@@ -105,11 +105,13 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-royal-950/50 p-4 backdrop-blur-sm animate-fade-in"
-      onClick={onClose}
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md animate-pop overflow-y-auto rounded-2xl border border-ink-200 bg-cream-50 p-6 shadow-2xl shadow-royal-900/20"
-        onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
@@ -179,10 +181,11 @@ export function DonarModal({ campana, onClose, onDonacionCreada }: DonarModalPro
 
             <div className="mt-5">
               <div className="mb-1 flex items-center justify-between">
-                <label className="block text-sm font-medium text-ink-700">Monto (COP)</label>
+                <label htmlFor="monto-donacion" className="block text-sm font-medium text-ink-700">Monto (COP)</label>
                 <span className="font-serif text-lg font-medium text-royal-700">${monto.toLocaleString("es-CO")}</span>
               </div>
               <input
+                id="monto-donacion"
                 type="range"
                 min={MONTO_MIN}
                 max={MONTO_MAX}

@@ -43,7 +43,7 @@ export function AdminListas() {
   const [edicion, setEdicion] = useState<Edicion | null>(null);
 
   useEffect(() => {
-    api.get<Lista[]>("/listas").then(setListas);
+    void api.get<Lista[]>("/listas").then(setListas);
   }, []);
 
   function reemplazarOpcion(listaId: number, opcion: Opcion, nueva: boolean) {
